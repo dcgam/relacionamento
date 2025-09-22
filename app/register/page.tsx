@@ -6,20 +6,24 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Heart, Mail, Lock } from "lucide-react"
+import { Heart, Mail, Lock, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "@/lib/i18n"
 import Link from "next/link"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { createClient } from "@/lib/supabase/client"
+import { EmailInfoAlert } from "@/components/email-info-alert"
 
-export default function LoginPage() {
-  const t = useTranslations()
+export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+  const [isSuccess, setIsSuccess] = useState(false)
   const router = useRouter()
+  const t = useTranslations()
 
   useEffect(() => {
     const checkUser = async () => {
@@ -34,15 +38,32 @@ export default function LoginPage() {
     checkUser()
   }, [router])
 
+  useEffect(() => {
+    // Clear error when passwords match
+    if (password && confirmPassword && password !== confirmPassword) {
+      setError(t.passwordMismatch)
+    } else {
+      setError("")
+    }
+  }, [password, confirmPassword, t.passwordMismatch])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setMessage("")
     setError("")
+
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError(t.passwordMismatch)
+      setIsLoading(false)
+      return
+    }
 
     const supabase = createClient()
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -52,18 +73,15 @@ export default function LoginPage() {
 
       if (error) throw error
 
-      // Store email and language in localStorage
-      localStorage.setItem("userEmail", email)
-      localStorage.setItem("userLanguage", t.language)
-
-      // Redirect to dashboard
-      router.push("/dashboard")
+      router.push("/auth/sign-up-success")
     } catch (err: any) {
-      setError(err.message || "Erro ao fazer login")
+      setError(err.message || "Erro ao criar conta")
     } finally {
       setIsLoading(false)
     }
   }
+
+  const isFormValid = email && password && confirmPassword && password === confirmPassword
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -85,14 +103,16 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Login Card */}
+        {/* Registration Card */}
         <Card className="border-border shadow-lg">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center text-foreground">{t.startTransformation}</CardTitle>
+            <CardTitle className="text-2xl text-center text-foreground">{t.createAccount}</CardTitle>
             <CardDescription className="text-center text-muted-foreground">{t.enterEmail}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Registration Form - removed success state display */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email Field */}
               <div className="space-y-2">
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -108,6 +128,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {/* Password Field */}
               <div className="space-y-2">
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -123,32 +144,44 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="password"
+                    placeholder={t.confirmPasswordPlaceholder}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="pl-10 h-12 text-base"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              {/* Error Message */}
               {error && (
-                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                  <p className="text-sm text-destructive text-center">{error}</p>
+                <div className="flex items-center space-x-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                  <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0" />
+                  <p className="text-sm text-destructive">{error}</p>
                 </div>
               )}
 
-              <Button
-                type="submit"
-                className="w-full h-12 text-base font-medium"
-                disabled={isLoading || !email || !password}
-              >
-                {isLoading ? t.sending : t.startButton}
+              <Button type="submit" className="w-full h-12 text-base font-medium" disabled={isLoading || !isFormValid}>
+                {isLoading ? t.registering : t.createAccount}
               </Button>
             </form>
 
-            <div className="text-center">
-              <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                {t.forgotPassword}
-              </Link>
-            </div>
+            {/* Email Info Alert */}
+            <EmailInfoAlert type="signup" language={t.locale as "pt" | "es"} />
 
+            {/* Login Link */}
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
-                {t.dontHaveAccount}{" "}
-                <Link href="/register" className="text-primary hover:underline font-medium">
-                  {t.registerHere}
+                {t.alreadyHaveAccount}{" "}
+                <Link href="/" className="text-primary hover:underline font-medium">
+                  {t.loginHere}
                 </Link>
               </p>
             </div>
