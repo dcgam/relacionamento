@@ -38,6 +38,30 @@ export async function updateSession(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser()
 
+    if (request.nextUrl.pathname.startsWith("/admin")) {
+      if (!user) {
+        // No user, redirect to login
+        const url = request.nextUrl.clone()
+        url.pathname = "/login"
+        return NextResponse.redirect(url)
+      }
+
+      // Check if user is admin
+      const { data: adminUser, error: adminError } = await supabase
+        .from("admin_users")
+        .select("*")
+        .eq("id", user.id)
+        .eq("is_active", true)
+        .single()
+
+      if (adminError || !adminUser) {
+        // User is not admin, redirect to dashboard
+        const url = request.nextUrl.clone()
+        url.pathname = "/dashboard"
+        return NextResponse.redirect(url)
+      }
+    }
+
     if (request.nextUrl.pathname.startsWith("/dashboard") && !user) {
       // no user, potentially respond by redirecting the user to the login page
       const url = request.nextUrl.clone()
