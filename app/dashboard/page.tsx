@@ -183,8 +183,36 @@ export default function DashboardPage() {
     router.push(`/protocol/${protocolId}`)
   }
 
-  const handleAdminAccess = () => {
-    router.push("/admin")
+  const handleAdminAccess = async () => {
+    console.log("[v0] Admin button clicked")
+
+    const supabase = createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      console.log("[v0] User not authenticated")
+      return
+    }
+
+    console.log("[v0] Checking admin status for user:", user.email)
+
+    // Check if user is admin
+    const { data: adminUser, error } = await supabase
+      .from("admin_users")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .single()
+
+    if (error || !adminUser) {
+      console.log("[v0] User is not admin, redirecting to admin setup")
+      router.push("/admin/setup")
+    } else {
+      console.log("[v0] User is admin, redirecting to admin dashboard")
+      router.push("/admin")
+    }
   }
 
   return (
