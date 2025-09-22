@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronDown } from "lucide-react"
 import { setLanguage, detectLanguage, type Language } from "@/lib/i18n"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export function LanguageSwitcher() {
   const [currentLanguage, setCurrentLanguage] = useState<Language>("pt")
@@ -30,50 +29,81 @@ export function LanguageSwitcher() {
     window.location.reload()
   }
 
-  const getFlag = (lang: Language) => {
-    if (lang === "pt") {
-      return <span className="mr-2 text-base">🇧🇷</span>
-    }
-    return <span className="mr-2 text-base">🇪🇸</span>
-  }
+  const BrazilFlag = () => (
+    <div className="w-5 h-4 rounded-sm overflow-hidden border border-gray-300 flex-shrink-0">
+      <div className="w-full h-1/2 bg-green-500"></div>
+      <div className="w-full h-1/2 bg-yellow-400"></div>
+    </div>
+  )
 
-  const getLanguageName = (lang: Language) => {
-    return lang === "pt" ? "Português" : "Español"
+  const SpainFlag = () => (
+    <div className="w-5 h-4 rounded-sm overflow-hidden border border-gray-300 flex-shrink-0">
+      <div className="w-full h-1/4 bg-red-600"></div>
+      <div className="w-full h-2/4 bg-yellow-400"></div>
+      <div className="w-full h-1/4 bg-red-600"></div>
+    </div>
+  )
+
+  const getLanguageDisplay = (lang: Language) => {
+    if (lang === "pt") {
+      return (
+        <>
+          <BrazilFlag />
+          <span className="ml-2 text-sm font-medium">PT</span>
+        </>
+      )
+    }
+    return (
+      <>
+        <SpainFlag />
+        <span className="ml-2 text-sm font-medium">ES</span>
+      </>
+    )
   }
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2 bg-background border-border hover:bg-accent min-w-[120px]"
-          onClick={() => {
-            console.log("[v0] Language selector clicked, current state:", isOpen)
-            setIsOpen(!isOpen)
-          }}
-        >
-          {getFlag(currentLanguage)}
-          <span className="text-sm font-medium">{getLanguageName(currentLanguage)}</span>
-          <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-40 z-50">
-        <DropdownMenuItem
-          onClick={() => changeLanguage("pt")}
-          className={`cursor-pointer ${currentLanguage === "pt" ? "bg-accent" : ""}`}
-        >
-          🇧🇷
-          <span className="ml-2">Português</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => changeLanguage("es")}
-          className={`cursor-pointer ${currentLanguage === "es" ? "bg-accent" : ""}`}
-        >
-          🇪🇸
-          <span className="ml-2">Español</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="relative">
+      <Button
+        variant="outline"
+        size="sm"
+        className="flex items-center gap-1 bg-background border-border hover:bg-accent min-w-[80px]"
+        onClick={() => {
+          console.log("[v0] Language selector clicked, current state:", isOpen)
+          setIsOpen(!isOpen)
+        }}
+      >
+        {getLanguageDisplay(currentLanguage)}
+        <ChevronDown className={`w-3 h-3 ml-1 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+      </Button>
+
+      {isOpen && (
+        <>
+          {/* Backdrop to close dropdown when clicking outside */}
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+
+          {/* Dropdown content */}
+          <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+            <div
+              onClick={() => changeLanguage("pt")}
+              className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                currentLanguage === "pt" ? "bg-gray-50" : ""
+              }`}
+            >
+              <BrazilFlag />
+              <span className="ml-2 text-sm">PT-BR</span>
+            </div>
+            <div
+              onClick={() => changeLanguage("es")}
+              className={`flex items-center px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                currentLanguage === "es" ? "bg-gray-50" : ""
+              }`}
+            >
+              <SpainFlag />
+              <span className="ml-2 text-sm">ES</span>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   )
 }
