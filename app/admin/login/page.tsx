@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Shield } from "lucide-react"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { useTranslations } from "@/lib/i18n"
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("")
@@ -17,6 +19,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const t = useTranslations()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,13 +51,13 @@ export default function AdminLoginPage() {
       if (adminError || !adminUser) {
         // Sign out the user since they're not admin
         await supabase.auth.signOut()
-        throw new Error("Acceso denegado. No tienes permisos de administrador.")
+        throw new Error("Acesso negado. Você não tem permissões de administrador.")
       }
 
       // Success - redirect to admin dashboard
       router.push("/admin")
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Error al iniciar sesión")
+      setError(error instanceof Error ? error.message : "Erro ao fazer login")
     } finally {
       setIsLoading(false)
     }
@@ -62,6 +65,10 @@ export default function AdminLoginPage() {
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
+
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-6">
           <Card className="border-0 shadow-xl">
@@ -70,7 +77,7 @@ export default function AdminLoginPage() {
                 <Shield className="h-6 w-6 text-blue-600" />
               </div>
               <CardTitle className="text-2xl font-bold text-gray-900">Admin - Renove-se</CardTitle>
-              <CardDescription className="text-gray-600">Acceso exclusivo para administradores</CardDescription>
+              <CardDescription className="text-gray-600">Acesso exclusivo para administradores</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin}>
@@ -91,7 +98,7 @@ export default function AdminLoginPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="password" className="text-gray-700">
-                      Contraseña
+                      {t.password}
                     </Label>
                     <Input
                       id="password"
@@ -108,7 +115,7 @@ export default function AdminLoginPage() {
                     </div>
                   )}
                   <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
-                    {isLoading ? "Verificando..." : "Acceder al Panel"}
+                    {isLoading ? "Verificando..." : "Acessar Painel"}
                   </Button>
                 </div>
               </form>

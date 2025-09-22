@@ -33,6 +33,15 @@ export interface Translations {
   resetLinkSent: string
   backToLogin: string
 
+  adminLogin: string
+  adminAccess: string
+  adminEmail: string
+  adminPassword: string
+  accessPanel: string
+  verifying: string
+  accessDenied: string
+  loginError: string
+
   // Dashboard
   hello: string
   logout: string
@@ -110,6 +119,15 @@ const translations: Record<Language, Translations> = {
     resetLinkSent: "Link de recuperação enviado! Verifique seu e-mail.",
     backToLogin: "Voltar ao login",
 
+    adminLogin: "Login de Administrador",
+    adminAccess: "Acesso exclusivo para administradores",
+    adminEmail: "Email de administrador",
+    adminPassword: "Senha de administrador",
+    accessPanel: "Acessar Painel",
+    verifying: "Verificando...",
+    accessDenied: "Acesso negado. Você não tem permissões de administrador.",
+    loginError: "Erro ao fazer login",
+
     // Dashboard
     hello: "Olá",
     logout: "Sair",
@@ -185,6 +203,15 @@ const translations: Record<Language, Translations> = {
     sendResetLink: "Enviar enlace de recuperación",
     resetLinkSent: "¡Enlace de recuperación enviado! Revisa tu email.",
     backToLogin: "Volver al login",
+
+    adminLogin: "Login de Administrador",
+    adminAccess: "Acceso exclusivo para administradores",
+    adminEmail: "Email de administrador",
+    adminPassword: "Contraseña de administrador",
+    accessPanel: "Acceder al Panel",
+    verifying: "Verificando...",
+    accessDenied: "Acceso denegado. No tienes permisos de administrador.",
+    loginError: "Error al iniciar sesión",
 
     // Dashboard
     hello: "Hola",
