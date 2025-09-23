@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,31 +20,6 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [isAdminMode, setIsAdminMode] = useState(false)
   const router = useRouter()
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        // Check if user is admin
-        const { data: adminUser } = await supabase
-          .from("admin_users")
-          .select("*")
-          .eq("id", user.id)
-          .eq("is_active", true)
-          .single()
-
-        if (adminUser) {
-          router.push("/admin")
-        } else {
-          router.push("/dashboard")
-        }
-      }
-    }
-    checkUser()
-  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,7 +48,7 @@ export default function LoginPage() {
           localStorage.setItem("userLanguage", t.language)
 
           console.log("[v0] Redirecting to /admin")
-          router.push("/admin")
+          window.location.href = "/admin"
           return
         } else {
           console.log("[v0] Invalid admin credentials")
@@ -108,7 +83,7 @@ export default function LoginPage() {
       localStorage.setItem("userLanguage", t.language)
 
       console.log("[v0] Regular user login, redirecting to /dashboard")
-      router.push("/dashboard")
+      window.location.href = "/dashboard"
     } catch (err: any) {
       console.log("[v0] Login error:", err)
       setError(err.message || "Erro ao fazer login")
@@ -117,14 +92,10 @@ export default function LoginPage() {
     }
   }
 
-  const handleButtonClick = (e: React.MouseEvent) => {
-    console.log("[v0] Button clicked")
-    console.log("[v0] Email value:", email)
-    console.log("[v0] Password value:", password)
-    console.log("[v0] Button disabled:", isLoading)
-
-    // If it's a form button, let the form handle submission
-    // This is just for debugging
+  const handleButtonClick = () => {
+    console.log("[v0] Button clicked!")
+    console.log("[v0] Current state - Email:", email, "Password:", password ? "***" : "empty")
+    console.log("[v0] Loading state:", isLoading)
   }
 
   return (
