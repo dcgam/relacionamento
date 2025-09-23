@@ -30,62 +30,66 @@ export default function AdminPage() {
         // Get dashboard data
         const supabase = createClient()
 
-        // Get user statistics with fallback
-        let stats = null
-        try {
-          const { data: statsData, error: statsError } = await supabase
-            .from("admin_dashboard_stats")
-            .select("*")
-            .single()
+        // Get total users count
+        const { count: totalUsers, error: countError } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
 
-          if (statsError) {
-            console.log("[v0] Stats table not found, using fallback data")
-            // Create fallback stats
-            const { count: totalUsers } = await supabase.from("profiles").select("*", { count: "exact", head: true })
-
-            stats = {
-              total_users: totalUsers || 0,
-              new_users_week: 0,
-              new_users_month: 0,
-              total_completions: 0,
-              active_users_week: 0,
-              active_users_month: 0,
-            }
-          } else {
-            stats = statsData
-          }
-        } catch (error) {
-          console.error("[v0] Error fetching stats:", error)
-          stats = {
-            total_users: 0,
-            new_users_week: 0,
-            new_users_month: 0,
-            total_completions: 0,
-            active_users_week: 0,
-            active_users_month: 0,
-          }
+        if (countError) {
+          console.error("[v0] Error counting users:", countError)
         }
+
+        console.log("[v0] Total users found:", totalUsers)
+
+        // Get users created in the last week
+        const oneWeekAgo = new Date()
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+
+        const { count: newUsersWeek, error: weekError } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .gte("created_at", oneWeekAgo.toISOString())
+
+        if (weekError) {
+          console.error("[v0] Error counting weekly users:", weekError)
+        }
+
+        // Get users created in the last month
+        const oneMonthAgo = new Date()
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+
+        const { count: newUsersMonth, error: monthError } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .gte("created_at", oneMonthAgo.toISOString())
+
+        if (monthError) {
+          console.error("[v0] Error counting monthly users:", monthError)
+        }
+
+        // Create stats object with real data
+        const stats = {
+          total_users: totalUsers || 0,
+          new_users_week: newUsersWeek || 0,
+          new_users_month: newUsersMonth || 0,
+          total_completions: 0, // Will be calculated when we have progress data
+          active_users_week: newUsersWeek || 0, // Using new users as proxy for active users
+          active_users_month: newUsersMonth || 0,
+        }
+
+        console.log("[v0] Calculated stats:", stats)
 
         // Get recent users with their profiles
         const { data: recentUsers, error: usersError } = await supabase
           .from("profiles")
-          .select(`
-            id,
-            email,
-            first_name,
-            last_name,
-            created_at,
-            updated_at,
-            country,
-            city,
-            goals,
-            motivation_level
-          `)
+          .select("*")
           .order("created_at", { ascending: false })
           .limit(10)
 
         if (usersError) {
           console.error("[v0] Error fetching users:", usersError)
+        } else {
+          console.log("[v0] Recent users found:", recentUsers?.length || 0)
         }
 
         // Get user progress summary with error handling
@@ -99,9 +103,10 @@ export default function AdminPage() {
             `)
 
           if (progressError) {
-            console.log("[v0] Progress table not found, using empty data")
+            console.log("[v0] Progress table not found, using empty data:", progressError.message)
           } else {
             progressSummary = progressData || []
+            console.log("[v0] Progress data found:", progressSummary.length)
           }
         } catch (error) {
           console.error("[v0] Error fetching progress:", error)
