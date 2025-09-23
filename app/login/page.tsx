@@ -23,6 +23,8 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+
     console.log("[v0] Form submitted")
     console.log("[v0] Email:", email)
     console.log("[v0] Password length:", password.length)
@@ -39,7 +41,6 @@ export default function LoginPage() {
     try {
       if (isAdminMode) {
         console.log("[v0] Checking admin credentials")
-        // Direct admin credential check
         if (email === "admin@renovese.com" && password === "admin123") {
           console.log("[v0] Admin credentials verified")
           // Store admin session
@@ -48,7 +49,7 @@ export default function LoginPage() {
           localStorage.setItem("userLanguage", t.language)
 
           console.log("[v0] Redirecting to /admin")
-          window.location.href = "/admin"
+          router.push("/admin")
           return
         } else {
           console.log("[v0] Invalid admin credentials")
@@ -83,19 +84,13 @@ export default function LoginPage() {
       localStorage.setItem("userLanguage", t.language)
 
       console.log("[v0] Regular user login, redirecting to /dashboard")
-      window.location.href = "/dashboard"
+      router.push("/dashboard")
     } catch (err: any) {
       console.log("[v0] Login error:", err)
       setError(err.message || "Erro ao fazer login")
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleButtonClick = () => {
-    console.log("[v0] Button clicked!")
-    console.log("[v0] Current state - Email:", email, "Password:", password ? "***" : "empty")
-    console.log("[v0] Loading state:", isLoading)
   }
 
   return (
@@ -204,7 +199,6 @@ export default function LoginPage() {
                 type="submit"
                 className={`w-full h-12 text-base font-medium ${isAdminMode ? "bg-blue-600 hover:bg-blue-700" : ""}`}
                 disabled={isLoading}
-                onClick={handleButtonClick}
               >
                 {isLoading
                   ? isAdminMode
