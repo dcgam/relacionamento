@@ -18,14 +18,11 @@ import {
   BarChart3,
   UserCheck,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
 interface AdminUser {
-  id: string
   email: string
-  role: string
-  is_active: boolean
+  role?: string
 }
 
 interface Stats {
@@ -74,11 +71,14 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
-    const supabase = createClient()
 
     try {
-      await supabase.auth.signOut()
-      router.push("/admin/login")
+      localStorage.removeItem("adminSession")
+      localStorage.removeItem("userEmail")
+      localStorage.removeItem("userLanguage")
+
+      console.log("[v0] Admin session cleared")
+      router.push("/login")
     } catch (error) {
       console.error("[v0] Logout error:", error)
     } finally {
@@ -141,7 +141,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">{adminUser.email}</p>
-                <p className="text-xs text-gray-500 capitalize">{adminUser.role}</p>
+                <p className="text-xs text-gray-500 capitalize">{adminUser.role || "admin"}</p>
               </div>
               <Button
                 variant="outline"
