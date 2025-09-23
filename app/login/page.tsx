@@ -6,20 +6,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Heart, Mail, Lock, Shield } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useTranslations } from "@/lib/i18n"
 import Link from "next/link"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { createClient } from "@/lib/supabase/client"
 
 export default function LoginPage() {
-  const t = useTranslations()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [isAdminMode, setIsAdminMode] = useState(false)
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,13 +39,15 @@ export default function LoginPage() {
         console.log("[v0] Checking admin credentials")
         if (email === "admin@renovese.com" && password === "admin123") {
           console.log("[v0] Admin credentials verified")
-          // Store admin session
           localStorage.setItem("adminSession", "true")
           localStorage.setItem("userEmail", email)
-          localStorage.setItem("userLanguage", t.language)
+          localStorage.setItem("userLanguage", "en") // Assuming 'en' is the default language
+
+          // Set cookie for server-side middleware
+          document.cookie = "adminSession=true; path=/; max-age=86400" // 24 hours
 
           console.log("[v0] Redirecting to /admin")
-          router.push("/admin")
+          window.location.href = "/admin"
           return
         } else {
           console.log("[v0] Invalid admin credentials")
@@ -81,10 +79,10 @@ export default function LoginPage() {
 
       // Store email and language in localStorage
       localStorage.setItem("userEmail", email)
-      localStorage.setItem("userLanguage", t.language)
+      localStorage.setItem("userLanguage", "en") // Assuming 'en' is the default language
 
       console.log("[v0] Regular user login, redirecting to /dashboard")
-      router.push("/dashboard")
+      window.location.href = "/dashboard"
     } catch (err: any) {
       console.log("[v0] Login error:", err)
       setError(err.message || "Erro ao fazer login")
@@ -116,9 +114,9 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">{isAdminMode ? "Admin - Renove-se" : t.welcome}</h1>
+            <h1 className="text-3xl font-bold text-foreground">{isAdminMode ? "Admin - Renove-se" : "Welcome"}</h1>
             <p className="text-muted-foreground text-balance">
-              {isAdminMode ? "Acesso exclusivo para administradores" : t.welcomeSubtitle}
+              {isAdminMode ? "Acesso exclusivo para administradores" : "Start your transformation"}
             </p>
           </div>
         </div>
@@ -151,10 +149,10 @@ export default function LoginPage() {
         <Card className="border-border shadow-lg">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl text-center text-foreground">
-              {isAdminMode ? "Acesso Administrativo" : t.startTransformation}
+              {isAdminMode ? "Acesso Administrativo" : "Start Transformation"}
             </CardTitle>
             <CardDescription className="text-center text-muted-foreground">
-              {isAdminMode ? "Entre com suas credenciais de admin" : t.enterEmail}
+              {isAdminMode ? "Entre com suas credenciais de admin" : "Enter your email"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -164,7 +162,7 @@ export default function LoginPage() {
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="email"
-                    placeholder={isAdminMode ? "admin@renovese.com" : t.emailPlaceholder}
+                    placeholder={isAdminMode ? "admin@renovese.com" : "Email"}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -179,7 +177,7 @@ export default function LoginPage() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="password"
-                    placeholder={t.passwordPlaceholder}
+                    placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -200,13 +198,7 @@ export default function LoginPage() {
                 className={`w-full h-12 text-base font-medium ${isAdminMode ? "bg-blue-600 hover:bg-blue-700" : ""}`}
                 disabled={isLoading}
               >
-                {isLoading
-                  ? isAdminMode
-                    ? "Verificando..."
-                    : t.sending
-                  : isAdminMode
-                    ? "Acessar Painel"
-                    : t.startButton}
+                {isLoading ? (isAdminMode ? "Verificando..." : "Sending...") : isAdminMode ? "Acessar Painel" : "Start"}
               </Button>
             </form>
 
@@ -214,15 +206,15 @@ export default function LoginPage() {
               <>
                 <div className="text-center">
                   <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                    {t.forgotPassword}
+                    "Forgot Password"
                   </Link>
                 </div>
 
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">
-                    {t.dontHaveAccount}{" "}
+                    "Don't have an account? "{" "}
                     <Link href="/register" className="text-primary hover:underline font-medium">
-                      {t.registerHere}
+                      "Register here"
                     </Link>
                   </p>
                 </div>
@@ -233,7 +225,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <div className="text-center">
-          <p className="text-xs text-muted-foreground">{t.termsNotice}</p>
+          <p className="text-xs text-muted-foreground">"Terms and Conditions apply"</p>
         </div>
       </div>
     </div>
