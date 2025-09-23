@@ -51,31 +51,29 @@ export default function LoginPage() {
     console.log("[v0] Form submitted")
     console.log("[v0] Email:", email)
     console.log("[v0] Password length:", password.length)
-    console.log("[v0] Is loading:", isLoading)
     console.log("[v0] Admin mode:", isAdminMode)
+
+    if (isLoading) {
+      console.log("[v0] Already loading, ignoring submit")
+      return
+    }
 
     setIsLoading(true)
     setError("")
 
-    const supabase = createClient()
-
     try {
-      console.log("[v0] Attempting login with email:", email)
-      console.log("[v0] Admin mode:", isAdminMode)
-
       if (isAdminMode) {
+        console.log("[v0] Checking admin credentials")
         // Direct admin credential check
         if (email === "admin@renovese.com" && password === "admin123") {
-          console.log("[v0] Admin credentials verified, redirecting to /admin")
+          console.log("[v0] Admin credentials verified")
           // Store admin session
           localStorage.setItem("adminSession", "true")
           localStorage.setItem("userEmail", email)
           localStorage.setItem("userLanguage", t.language)
 
-          // Add a small delay to ensure state updates
-          setTimeout(() => {
-            router.push("/admin")
-          }, 100)
+          console.log("[v0] Redirecting to /admin")
+          router.push("/admin")
           return
         } else {
           console.log("[v0] Invalid admin credentials")
@@ -84,6 +82,7 @@ export default function LoginPage() {
       }
 
       // Regular user authentication
+      const supabase = createClient()
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -116,6 +115,16 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleButtonClick = (e: React.MouseEvent) => {
+    console.log("[v0] Button clicked")
+    console.log("[v0] Email value:", email)
+    console.log("[v0] Password value:", password)
+    console.log("[v0] Button disabled:", isLoading)
+
+    // If it's a form button, let the form handle submission
+    // This is just for debugging
   }
 
   return (
@@ -224,12 +233,7 @@ export default function LoginPage() {
                 type="submit"
                 className={`w-full h-12 text-base font-medium ${isAdminMode ? "bg-blue-600 hover:bg-blue-700" : ""}`}
                 disabled={isLoading}
-                onClick={(e) => {
-                  console.log("[v0] Button clicked")
-                  console.log("[v0] Email value:", email)
-                  console.log("[v0] Password value:", password)
-                  console.log("[v0] Button disabled:", isLoading)
-                }}
+                onClick={handleButtonClick}
               >
                 {isLoading
                   ? isAdminMode
