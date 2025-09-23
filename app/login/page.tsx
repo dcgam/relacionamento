@@ -48,6 +48,12 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log("[v0] Form submitted")
+    console.log("[v0] Email:", email)
+    console.log("[v0] Password length:", password.length)
+    console.log("[v0] Is loading:", isLoading)
+    console.log("[v0] Admin mode:", isAdminMode)
+
     setIsLoading(true)
     setError("")
 
@@ -65,11 +71,15 @@ export default function LoginPage() {
           localStorage.setItem("adminSession", "true")
           localStorage.setItem("userEmail", email)
           localStorage.setItem("userLanguage", t.language)
-          router.push("/admin")
+
+          // Add a small delay to ensure state updates
+          setTimeout(() => {
+            router.push("/admin")
+          }, 100)
           return
         } else {
           console.log("[v0] Invalid admin credentials")
-          throw new Error("Credenciais de administrador inválidas")
+          throw new Error("Invalid login credentials")
         }
       }
 
@@ -213,7 +223,13 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className={`w-full h-12 text-base font-medium ${isAdminMode ? "bg-blue-600 hover:bg-blue-700" : ""}`}
-                disabled={isLoading || !email || !password}
+                disabled={isLoading}
+                onClick={(e) => {
+                  console.log("[v0] Button clicked")
+                  console.log("[v0] Email value:", email)
+                  console.log("[v0] Password value:", password)
+                  console.log("[v0] Button disabled:", isLoading)
+                }}
               >
                 {isLoading
                   ? isAdminMode
