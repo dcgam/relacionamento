@@ -54,6 +54,9 @@ export default function LoginPage() {
     const supabase = createClient()
 
     try {
+      console.log("[v0] Attempting login with email:", email)
+      console.log("[v0] Admin mode:", isAdminMode)
+
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -62,17 +65,25 @@ export default function LoginPage() {
         },
       })
 
-      if (authError) throw authError
+      if (authError) {
+        console.log("[v0] Auth error:", authError)
+        throw authError
+      }
 
       if (!authData.user) {
+        console.log("[v0] No user data returned")
         throw new Error("No user data returned")
       }
+
+      console.log("[v0] User authenticated:", authData.user.email)
 
       // Store email and language in localStorage
       localStorage.setItem("userEmail", email)
       localStorage.setItem("userLanguage", t.language)
 
       if (isAdminMode) {
+        console.log("[v0] Checking admin permissions for user:", authData.user.id)
+
         // Check if user is admin
         const { data: adminUser, error: adminError } = await supabase
           .from("admin_users")
@@ -81,19 +92,25 @@ export default function LoginPage() {
           .eq("is_active", true)
           .single()
 
+        console.log("[v0] Admin check result:", { adminUser, adminError })
+
         if (adminError || !adminUser) {
+          console.log("[v0] User is not admin, signing out")
           // Sign out the user since they're not admin
           await supabase.auth.signOut()
           throw new Error("Acesso negado. Você não tem permissões de administrador.")
         }
 
+        console.log("[v0] Admin access granted, redirecting to /admin")
         // Success - redirect to admin dashboard
         router.push("/admin")
       } else {
+        console.log("[v0] Regular user login, redirecting to /dashboard")
         // Regular user login - redirect to dashboard
         router.push("/dashboard")
       }
     } catch (err: any) {
+      console.log("[v0] Login error:", err)
       setError(err.message || "Erro ao fazer login")
     } finally {
       setIsLoading(false)
