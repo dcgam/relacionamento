@@ -30,16 +30,55 @@ export default function AdminPage() {
         // Get dashboard data
         const supabase = createClient()
 
+        console.log("[v0] Testing Supabase connection...")
+
+        // Test if we can access profiles table at all
+        const { data: testData, error: testError } = await supabase.from("profiles").select("*").limit(1)
+
+        console.log("[v0] Test query result:", { testData, testError })
+
+        if (testError) {
+          console.error("[v0] Cannot access profiles table:", testError)
+          // Try to see what tables we can access
+          const { data: authData, error: authError } = await supabase.auth.getUser()
+          console.log("[v0] Current auth user:", { authData, authError })
+        }
+
+        const {
+          data: allProfiles,
+          error: profilesError,
+          count,
+        } = await supabase.from("profiles").select("*", { count: "exact" })
+
+        console.log("[v0] All profiles query:", {
+          data: allProfiles,
+          error: profilesError,
+          count,
+          dataLength: allProfiles?.length,
+        })
+
+        if (profilesError) {
+          console.error("[v0] Profiles error details:", {
+            message: profilesError.message,
+            details: profilesError.details,
+            hint: profilesError.hint,
+            code: profilesError.code,
+          })
+        }
+
+        try {
+          const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
+          console.log("[v0] Auth users:", { authUsers, authError })
+        } catch (authAdminError) {
+          console.log("[v0] Cannot access auth admin (expected):", authAdminError.message)
+        }
+
         // Get total users count
         const { count: totalUsers, error: countError } = await supabase
           .from("profiles")
           .select("*", { count: "exact", head: true })
 
-        if (countError) {
-          console.error("[v0] Error counting users:", countError)
-        }
-
-        console.log("[v0] Total users found:", totalUsers)
+        console.log("[v0] Total users count:", { totalUsers, countError })
 
         // Get users created in the last week
         const oneWeekAgo = new Date()
@@ -50,9 +89,7 @@ export default function AdminPage() {
           .select("*", { count: "exact", head: true })
           .gte("created_at", oneWeekAgo.toISOString())
 
-        if (weekError) {
-          console.error("[v0] Error counting weekly users:", weekError)
-        }
+        console.log("[v0] New users this week:", { newUsersWeek, weekError })
 
         // Get users created in the last month
         const oneMonthAgo = new Date()
@@ -63,17 +100,15 @@ export default function AdminPage() {
           .select("*", { count: "exact", head: true })
           .gte("created_at", oneMonthAgo.toISOString())
 
-        if (monthError) {
-          console.error("[v0] Error counting monthly users:", monthError)
-        }
+        console.log("[v0] New users this month:", { newUsersMonth, monthError })
 
         // Create stats object with real data
         const stats = {
           total_users: totalUsers || 0,
           new_users_week: newUsersWeek || 0,
           new_users_month: newUsersMonth || 0,
-          total_completions: 0, // Will be calculated when we have progress data
-          active_users_week: newUsersWeek || 0, // Using new users as proxy for active users
+          total_completions: 0,
+          active_users_week: newUsersWeek || 0,
           active_users_month: newUsersMonth || 0,
         }
 
@@ -86,11 +121,7 @@ export default function AdminPage() {
           .order("created_at", { ascending: false })
           .limit(10)
 
-        if (usersError) {
-          console.error("[v0] Error fetching users:", usersError)
-        } else {
-          console.log("[v0] Recent users found:", recentUsers?.length || 0)
-        }
+        console.log("[v0] Recent users query:", { recentUsers, usersError })
 
         // Get user progress summary with error handling
         let progressSummary = []
@@ -102,17 +133,22 @@ export default function AdminPage() {
               profiles!inner(email, first_name, last_name)
             `)
 
+          console.log("[v0] Progress query:", { progressData, progressError })
+
           if (progressError) {
             console.log("[v0] Progress table not found, using empty data:", progressError.message)
           } else {
             progressSummary = progressData || []
-            console.log("[v0] Progress data found:", progressSummary.length)
           }
         } catch (error) {
           console.error("[v0] Error fetching progress:", error)
         }
 
-        console.log("[v0] Admin dashboard data loaded successfully")
+        console.log("[v0] Final dashboard data:", {
+          totalUsers,
+          recentUsersCount: recentUsers?.length || 0,
+          progressCount: progressSummary.length,
+        })
 
         setDashboardData({
           adminUser: { email: userEmail },
