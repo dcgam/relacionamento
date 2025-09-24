@@ -6,18 +6,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  Heart,
-  User,
-  MessageCircle,
-  Brain,
-  Sparkles,
-  Target,
-  BookOpen,
-  ArrowRight,
-  LogOut,
-  Settings,
-} from "lucide-react"
+import { Heart, User, MessageCircle, Brain, Sparkles, Target, BookOpen, ArrowRight, LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslations, type Language, getTranslations } from "@/lib/i18n"
 import { LanguageSwitcher } from "@/components/language-switcher"
@@ -241,38 +230,6 @@ export default function DashboardPage() {
     router.push(`/protocol/${protocolId}`)
   }
 
-  const handleAdminAccess = async () => {
-    console.log("[v0] Admin button clicked")
-
-    const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      console.log("[v0] User not authenticated")
-      return
-    }
-
-    console.log("[v0] Checking admin status for user:", user.email)
-
-    // Check if user is admin
-    const { data: adminUser, error } = await supabase
-      .from("admin_users")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .single()
-
-    if (error || !adminUser) {
-      console.log("[v0] User is not admin, redirecting to admin setup")
-      router.push("/admin/setup")
-    } else {
-      console.log("[v0] User is admin, redirecting to admin dashboard")
-      router.push("/admin")
-    }
-  }
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -292,15 +249,6 @@ export default function DashboardPage() {
           <div className="flex items-center space-x-3">
             <LanguageSwitcher />
             <div className="h-6 w-px bg-border"></div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleAdminAccess}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Admin
-            </Button>
             <Button
               variant="ghost"
               size="sm"

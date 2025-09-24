@@ -6,22 +6,21 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
+import { Input } from "@/components/ui/input"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Users,
   TrendingUp,
   Activity,
-  Calendar,
   User,
   MapPin,
-  Heart,
   LogOut,
   Settings,
   BarChart3,
   UserCheck,
   Download,
   FileText,
-  CheckCircle,
-  Clock,
+  Search,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -48,6 +47,7 @@ interface RecentUser {
   updated_at: string
   country?: string
   city?: string
+  phone?: string
   goals?: string[]
   motivation_level?: number
   progress_percentage?: number
@@ -76,7 +76,15 @@ interface AdminDashboardProps {
 export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary }: AdminDashboardProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
   const router = useRouter()
+
+  const filteredUsers = recentUsers.filter((user) => {
+    const displayName = getUserDisplayName(user).toLowerCase()
+    const email = user.email.toLowerCase()
+    const search = searchTerm.toLowerCase()
+    return displayName.includes(search) || email.includes(search)
+  })
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -99,15 +107,13 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
     setIsDownloading(true)
 
     try {
-      // Create CSV content
-      const csvContent = generateCSVReport()
+      const csvContent = generateEnhancedCSVReport()
 
-      // Create and download file
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
       const link = document.createElement("a")
       const url = URL.createObjectURL(blob)
       link.setAttribute("href", url)
-      link.setAttribute("download", `renove-se-report-${new Date().toISOString().split("T")[0]}.csv`)
+      link.setAttribute("download", `renove-se-relatorio-completo-${new Date().toISOString().split("T")[0]}.csv`)
       link.style.visibility = "hidden"
       document.body.appendChild(link)
       link.click()
@@ -119,34 +125,50 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
     }
   }
 
-  const generateCSVReport = () => {
+  const generateEnhancedCSVReport = () => {
     const headers = [
-      "Email",
       "Nome",
-      "Data de Registro",
-      "Progresso (%)",
-      "Passos Completados",
-      "Total Passos",
+      "Email",
+      "Telefone",
+      "Data de Inscrição",
+      "Progressão Total (%)",
+      "Fundamentos (%)",
+      "Prática (%)",
+      "Avançado (%)",
       "País",
       "Cidade",
       "Nível de Motivação",
     ]
 
-    const rows = recentUsers.map((user) => [
-      user.email,
-      getUserDisplayName(user),
-      new Date(user.created_at).toLocaleDateString("pt-BR"),
-      user.progress_percentage || 0,
-      user.completed_steps || 0,
-      user.total_steps || 12,
-      user.country || "",
-      user.city || "",
-      user.motivation_level || "",
-    ])
+    const rows = filteredUsers.map((user) => {
+      const detailedProgress = getUserDetailedProgress(user)
+      const fundamentosProgress = calculateCategoryProgress(detailedProgress, "Fundamentos")
+      const praticaProgress = calculateCategoryProgress(detailedProgress, "Prática")
+      const avancadoProgress = calculateCategoryProgress(detailedProgress, "Avançado")
+
+      return [
+        getUserDisplayName(user),
+        user.email,
+        user.phone || "N/A",
+        new Date(user.created_at).toLocaleDateString("pt-BR"),
+        user.progress_percentage || 67,
+        fundamentosProgress,
+        praticaProgress,
+        avancadoProgress,
+        user.country || "N/A",
+        user.city || "N/A",
+        user.motivation_level || "N/A",
+      ]
+    })
 
     const csvContent = [headers, ...rows].map((row) => row.map((field) => `"${field}"`).join(",")).join("\n")
-
     return csvContent
+  }
+
+  const calculateCategoryProgress = (steps: any[], category: string) => {
+    const categorySteps = steps.filter((step) => step.category === category)
+    const completedSteps = categorySteps.filter((step) => step.completed).length
+    return Math.round((completedSteps / categorySteps.length) * 100)
   }
 
   const getStatusBadge = (status: string) => {
@@ -303,7 +325,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
         {/* Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="users">Usuarios Recientes</TabsTrigger>
+            <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="progress">Progreso por Categoría</TabsTrigger>
             <TabsTrigger value="analytics">Análisis</TabsTrigger>
           </TabsList>
@@ -311,93 +333,111 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
           <TabsContent value="users" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Users className="w-5 h-5" />
-                  <span>Usuarios Recientes</span>
-                </CardTitle>
-                <CardDescription>Los últimos usuarios registrados en la plataforma</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Users className="w-5 h-5" />
+                      <span>Lista de Usuarios</span>
+                    </CardTitle>
+                    <CardDescription>Gestión y seguimiento de usuarios registrados</CardDescription>
+                  </div>
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Buscar por nome ou email..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {recentUsers.length === 0 ? (
-                    <div className="text-center py-8">
-                      <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">No hay usuarios registrados</p>
-                    </div>
-                  ) : (
-                    recentUsers.map((user) => (
-                      <div key={user.id} className="p-4 bg-gray-50 rounded-lg space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <User className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900">{getUserDisplayName(user)}</p>
-                              <p className="text-sm text-gray-500">{user.email}</p>
+                {filteredUsers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">
+                      {searchTerm ? "Nenhum usuário encontrado" : "No hay usuarios registrados"}
+                    </p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Usuario</TableHead>
+                        <TableHead>Data de Registro</TableHead>
+                        <TableHead>Progresso Total</TableHead>
+                        <TableHead>Fundamentos</TableHead>
+                        <TableHead>Prática</TableHead>
+                        <TableHead>Avançado</TableHead>
+                        <TableHead>Localização</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.map((user) => {
+                        const detailedProgress = getUserDetailedProgress(user)
+                        const fundamentosProgress = calculateCategoryProgress(detailedProgress, "Fundamentos")
+                        const praticaProgress = calculateCategoryProgress(detailedProgress, "Prática")
+                        const avancadoProgress = calculateCategoryProgress(detailedProgress, "Avançado")
+
+                        return (
+                          <TableRow key={user.id}>
+                            <TableCell>
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <User className="w-4 h-4 text-blue-600" />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900">{getUserDisplayName(user)}</p>
+                                  <p className="text-sm text-gray-500">{user.email}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm text-gray-900">
+                                {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <Progress value={user.progress_percentage || 67} className="w-16" />
+                                <span className="text-sm font-medium">{user.progress_percentage || 67}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <Progress value={fundamentosProgress} className="w-12" />
+                                <span className="text-sm text-gray-600">{fundamentosProgress}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <Progress value={praticaProgress} className="w-12" />
+                                <span className="text-sm text-gray-600">{praticaProgress}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                <Progress value={avancadoProgress} className="w-12" />
+                                <span className="text-sm text-gray-600">{avancadoProgress}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
                               {user.country && (
-                                <div className="flex items-center space-x-1 mt-1">
+                                <div className="flex items-center space-x-1">
                                   <MapPin className="w-3 h-3 text-gray-400" />
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-sm text-gray-600">
                                     {user.city ? `${user.city}, ${user.country}` : user.country}
                                   </span>
                                 </div>
                               )}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center space-x-1 text-sm text-gray-500">
-                              <Calendar className="w-4 h-4" />
-                              <span>{new Date(user.created_at).toLocaleDateString("es-ES")}</span>
-                            </div>
-                            {user.motivation_level && (
-                              <div className="flex items-center space-x-1 mt-1">
-                                <Heart className="w-3 h-3 text-red-500" />
-                                <span className="text-xs text-gray-500">Motivación: {user.motivation_level}/10</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="border-t pt-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-medium text-gray-700">Progreso Detalhado</h4>
-                            <div className="flex items-center space-x-2">
-                              <Progress value={user.progress_percentage || 67} className="w-20" />
-                              <span className="text-sm text-gray-600">{user.progress_percentage || 67}%</span>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {["Fundamentos", "Prática", "Avançado"].map((category) => (
-                              <div key={category} className="space-y-2">
-                                <h5 className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                                  {category}
-                                </h5>
-                                <div className="space-y-1">
-                                  {getUserDetailedProgress(user)
-                                    .filter((step) => step.category === category)
-                                    .map((step) => (
-                                      <div key={step.id} className="flex items-center space-x-2 text-xs">
-                                        {step.completed ? (
-                                          <CheckCircle className="w-3 h-3 text-green-500" />
-                                        ) : (
-                                          <Clock className="w-3 h-3 text-gray-400" />
-                                        )}
-                                        <span className={step.completed ? "text-green-700" : "text-gray-500"}>
-                                          {step.name}
-                                        </span>
-                                      </div>
-                                    ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
