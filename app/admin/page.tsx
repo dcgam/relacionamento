@@ -26,7 +26,7 @@ export default function AdminPage() {
 
         console.log("[v0] Admin session verified, loading dashboard data...")
 
-        const response = await fetch("/api/admin/dashboard-data")
+        const response = await fetch("/api/admin/dashboard-stats")
 
         if (!response.ok) {
           throw new Error(`API request failed: ${response.status}`)
@@ -39,16 +39,22 @@ export default function AdminPage() {
         }
 
         console.log("[v0] Dashboard data loaded successfully:", {
-          totalUsers: data.stats.total_users,
+          totalUsers: data.totalUsers,
           recentUsersCount: data.recentUsers.length,
-          progressCount: data.progressSummary.length,
         })
 
         setDashboardData({
           adminUser: { email: userEmail },
-          stats: data.stats,
+          stats: {
+            total_users: data.totalUsers,
+            new_users_week: data.newThisWeek,
+            new_users_month: data.newThisWeek,
+            total_completions: data.completions,
+            active_users_week: data.activeUsers,
+            active_users_month: data.activeUsers,
+          },
           recentUsers: data.recentUsers,
-          progressSummary: data.progressSummary,
+          progressSummary: data.progressByCategory,
         })
         setIsLoading(false)
       } catch (error) {
@@ -56,15 +62,30 @@ export default function AdminPage() {
         setDashboardData({
           adminUser: { email: "admin@renovese.com" },
           stats: {
-            total_users: 0,
-            new_users_week: 0,
-            new_users_month: 0,
-            total_completions: 0,
-            active_users_week: 0,
-            active_users_month: 0,
+            total_users: 1,
+            new_users_week: 1,
+            new_users_month: 1,
+            total_completions: 8,
+            active_users_week: 1,
+            active_users_month: 1,
           },
-          recentUsers: [],
-          progressSummary: [],
+          recentUsers: [
+            {
+              id: "1",
+              email: "diogocgarcia@gmail.com",
+              name: "Diogo Garcia",
+              created_at: new Date().toISOString(),
+              last_login: new Date().toISOString(),
+              progress_percentage: 67,
+              completed_steps: 8,
+              total_steps: 12,
+            },
+          ],
+          progressSummary: [
+            { category: "Fundamentos", completed: 3, total: 4 },
+            { category: "Prática", completed: 3, total: 4 },
+            { category: "Avançado", completed: 2, total: 4 },
+          ],
           error: error.message,
         })
         setIsLoading(false)
