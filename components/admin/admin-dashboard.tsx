@@ -140,6 +140,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
 
   const calculateCategoryProgress = (steps: any[], category: string) => {
     const categorySteps = steps.filter((step) => step.category === category)
+    if (categorySteps.length === 0) return 0
     const completedSteps = categorySteps.filter((step) => step.completed).length
     return Math.round((completedSteps / categorySteps.length) * 100)
   }
