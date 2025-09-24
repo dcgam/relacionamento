@@ -122,7 +122,7 @@ export default function AdminPage() {
       stats={dashboardData.stats}
       recentUsers={dashboardData.recentUsers}
       progressSummary={dashboardData.progressSummary}
-      error={dashboardData.error}
+      {...(dashboardData.error && { error: dashboardData.error })}
     />
   )
 }

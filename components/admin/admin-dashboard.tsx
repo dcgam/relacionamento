@@ -3,25 +3,10 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Users,
-  TrendingUp,
-  Activity,
-  User,
-  MapPin,
-  LogOut,
-  Settings,
-  BarChart3,
-  UserCheck,
-  Download,
-  FileText,
-  Search,
-} from "lucide-react"
+import { Users, TrendingUp, Activity, User, LogOut, Settings, UserCheck, Download, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 interface AdminUser {
@@ -41,29 +26,22 @@ interface Stats {
 interface RecentUser {
   id: string
   email: string
+  name?: string
   first_name?: string
   last_name?: string
   created_at: string
-  updated_at: string
+  phone?: string
   country?: string
   city?: string
-  phone?: string
-  goals?: string[]
-  motivation_level?: number
   progress_percentage?: number
   completed_steps?: number
   total_steps?: number
 }
 
 interface ProgressSummary {
-  user_id: string
-  step_category: string
-  status: string
-  profiles: {
-    email: string
-    first_name?: string
-    last_name?: string
-  }
+  category: string
+  completed: number
+  total: number
 }
 
 interface AdminDashboardProps {
@@ -71,9 +49,10 @@ interface AdminDashboardProps {
   stats: Stats | null
   recentUsers: RecentUser[]
   progressSummary: ProgressSummary[]
+  error?: string
 }
 
-export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary }: AdminDashboardProps) {
+export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary, error }: AdminDashboardProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -88,12 +67,10 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
-
     try {
       localStorage.removeItem("adminSession")
       localStorage.removeItem("userEmail")
       localStorage.removeItem("userLanguage")
-
       console.log("[v0] Admin session cleared")
       router.push("/login")
     } catch (error) {
@@ -105,10 +82,8 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
 
   const handleDownloadReport = async () => {
     setIsDownloading(true)
-
     try {
       const csvContent = generateEnhancedCSVReport()
-
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
       const link = document.createElement("a")
       const url = URL.createObjectURL(blob)
@@ -137,7 +112,6 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
       "Avançado (%)",
       "País",
       "Cidade",
-      "Nível de Motivação",
     ]
 
     const rows = filteredUsers.map((user) => {
@@ -157,7 +131,6 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
         avancadoProgress,
         user.country || "N/A",
         user.city || "N/A",
-        user.motivation_level || "N/A",
       ]
     })
 
@@ -171,38 +144,12 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
     return Math.round((completedSteps / categorySteps.length) * 100)
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "not_started":
-        return <Badge variant="secondary">No iniciado</Badge>
-      case "in_progress":
-        return <Badge variant="default">En progreso</Badge>
-      case "completed":
-        return (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            Completado
-          </Badge>
-        )
-      case "skipped":
-        return (
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-            Omitido
-          </Badge>
-        )
-      default:
-        return <Badge variant="secondary">Desconocido</Badge>
-    }
-  }
-
   const getUserDisplayName = (user: RecentUser) => {
+    if (user.name) return user.name
     if (user.first_name || user.last_name) {
       return `${user.first_name || ""} ${user.last_name || ""}`.trim()
     }
     return user.email.split("@")[0]
-  }
-
-  const getProgressByCategory = (category: string) => {
-    return progressSummary.filter((p) => p.step_category === category)
   }
 
   const getUserDetailedProgress = (user: RecentUser) => {
@@ -220,7 +167,6 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
       { id: 11, name: "Projeto Final", category: "Avançado", completed: false },
       { id: 12, name: "Certificação", category: "Avançado", completed: false },
     ]
-
     return steps
   }
 
@@ -256,7 +202,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
 
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">{adminUser.email}</p>
-                <p className="text-xs text-gray-500 capitalize">{adminUser.role || "admin"}</p>
+                <p className="text-xs text-gray-500 capitalize">{adminUser.role || "Admin"}</p>
               </div>
               <Button
                 variant="outline"
@@ -266,7 +212,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
                 className="text-gray-600 hover:text-gray-900 bg-transparent"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                {isLoggingOut ? "Saliendo..." : "Salir"}
+                {isLoggingOut ? "Salindo..." : "Salir"}
               </Button>
             </div>
           </div>
@@ -275,6 +221,13 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-8" role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+
         {/* Stats Overview */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <Card>
@@ -322,228 +275,105 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary 
           </Card>
         </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="users">Usuarios</TabsTrigger>
-            <TabsTrigger value="progress">Progreso por Categoría</TabsTrigger>
-            <TabsTrigger value="analytics">Análisis</TabsTrigger>
-          </TabsList>
+        {/* Users Table */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center space-x-2">
+                  <Users className="w-5 h-5" />
+                  <span>Lista de Usuarios</span>
+                </CardTitle>
+                <CardDescription>Gestión y seguimiento de usuarios registrados</CardDescription>
+              </div>
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar por nome ou email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {filteredUsers.length === 0 ? (
+              <div className="text-center py-8">
+                <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">
+                  {searchTerm ? "Nenhum usuário encontrado" : "No hay usuarios registrados"}
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Usuario</TableHead>
+                    <TableHead>Data de Registro</TableHead>
+                    <TableHead>Progresso Total</TableHead>
+                    <TableHead>Fundamentos</TableHead>
+                    <TableHead>Prática</TableHead>
+                    <TableHead>Avançado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => {
+                    const detailedProgress = getUserDetailedProgress(user)
+                    const fundamentosProgress = calculateCategoryProgress(detailedProgress, "Fundamentos")
+                    const praticaProgress = calculateCategoryProgress(detailedProgress, "Prática")
+                    const avancadoProgress = calculateCategoryProgress(detailedProgress, "Avançado")
 
-          <TabsContent value="users" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Users className="w-5 h-5" />
-                      <span>Lista de Usuarios</span>
-                    </CardTitle>
-                    <CardDescription>Gestión y seguimiento de usuarios registrados</CardDescription>
-                  </div>
-                  <div className="relative w-64">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Buscar por nome ou email..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {filteredUsers.length === 0 ? (
-                  <div className="text-center py-8">
-                    <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">
-                      {searchTerm ? "Nenhum usuário encontrado" : "No hay usuarios registrados"}
-                    </p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Usuario</TableHead>
-                        <TableHead>Data de Registro</TableHead>
-                        <TableHead>Progresso Total</TableHead>
-                        <TableHead>Fundamentos</TableHead>
-                        <TableHead>Prática</TableHead>
-                        <TableHead>Avançado</TableHead>
-                        <TableHead>Localização</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.map((user) => {
-                        const detailedProgress = getUserDetailedProgress(user)
-                        const fundamentosProgress = calculateCategoryProgress(detailedProgress, "Fundamentos")
-                        const praticaProgress = calculateCategoryProgress(detailedProgress, "Prática")
-                        const avancadoProgress = calculateCategoryProgress(detailedProgress, "Avançado")
-
-                        return (
-                          <TableRow key={user.id}>
-                            <TableCell>
-                              <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                  <User className="w-4 h-4 text-blue-600" />
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-900">{getUserDisplayName(user)}</p>
-                                  <p className="text-sm text-gray-500">{user.email}</p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="text-sm text-gray-900">
-                                {new Date(user.created_at).toLocaleDateString("pt-BR")}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Progress value={user.progress_percentage || 67} className="w-16" />
-                                <span className="text-sm font-medium">{user.progress_percentage || 67}%</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Progress value={fundamentosProgress} className="w-12" />
-                                <span className="text-sm text-gray-600">{fundamentosProgress}%</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Progress value={praticaProgress} className="w-12" />
-                                <span className="text-sm text-gray-600">{praticaProgress}%</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-2">
-                                <Progress value={avancadoProgress} className="w-12" />
-                                <span className="text-sm text-gray-600">{avancadoProgress}%</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {user.country && (
-                                <div className="flex items-center space-x-1">
-                                  <MapPin className="w-3 h-3 text-gray-400" />
-                                  <span className="text-sm text-gray-600">
-                                    {user.city ? `${user.city}, ${user.country}` : user.country}
-                                  </span>
-                                </div>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="progress" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-3">
-              {["Fundamentos", "Prática", "Avançado"].map((category) => (
-                <Card key={category}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{category}</CardTitle>
-                    <CardDescription>Progresso na categoria {category.toLowerCase()}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {recentUsers.map((user) => {
-                        const categorySteps = getUserDetailedProgress(user).filter((step) => step.category === category)
-                        const completedSteps = categorySteps.filter((step) => step.completed).length
-                        const totalSteps = categorySteps.length
-                        const percentage = Math.round((completedSteps / totalSteps) * 100)
-
-                        return (
-                          <div key={user.id} className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm font-medium">{getUserDisplayName(user)}</p>
-                                <p className="text-xs text-gray-500">{user.email}</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm font-medium">
-                                  {completedSteps}/{totalSteps}
-                                </p>
-                                <p className="text-xs text-gray-500">{percentage}%</p>
-                              </div>
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <User className="w-4 h-4 text-blue-600" />
                             </div>
-                            <Progress value={percentage} className="h-2" />
+                            <div>
+                              <p className="font-medium text-gray-900">{getUserDisplayName(user)}</p>
+                              <p className="text-sm text-gray-500">{user.email}</p>
+                            </div>
                           </div>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <BarChart3 className="w-5 h-5" />
-                    <span>Análisis de Actividad</span>
-                  </CardTitle>
-                  <CardDescription>Métricas de actividad y engagement de usuarios</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                      <h4 className="font-medium text-blue-900">Tasa de Retención Semanal</h4>
-                      <p className="text-2xl font-bold text-blue-600 mt-2">
-                        {stats?.active_users_week && stats?.total_users
-                          ? Math.round((stats.active_users_week / stats.total_users) * 100)
-                          : 100}
-                        %
-                      </p>
-                      <p className="text-sm text-blue-700 mt-1">
-                        {stats?.active_users_week || 1} de {stats?.total_users || 1} usuarios
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-green-50 rounded-lg">
-                      <h4 className="font-medium text-green-900">Crecimiento Mensual</h4>
-                      <p className="text-2xl font-bold text-green-600 mt-2">{stats?.new_users_month || 1}</p>
-                      <p className="text-sm text-green-700 mt-1">Nuevos usuarios este mes</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <FileText className="w-5 h-5" />
-                    <span>Análisis de Completación</span>
-                  </CardTitle>
-                  <CardDescription>Estadísticas de progreso y completación</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-orange-50 rounded-lg">
-                      <h4 className="font-medium text-orange-900">Promedio de Completación</h4>
-                      <p className="text-2xl font-bold text-orange-600 mt-2">67%</p>
-                      <p className="text-sm text-orange-700 mt-1">8 de 12 pasos promedio</p>
-                    </div>
-
-                    <div className="p-4 bg-purple-50 rounded-lg">
-                      <h4 className="font-medium text-purple-900">Usuarios Activos</h4>
-                      <p className="text-2xl font-bold text-purple-600 mt-2">100%</p>
-                      <p className="text-sm text-purple-700 mt-1">Todos los usuarios están activos</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-gray-900">
+                            {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Progress value={user.progress_percentage || 67} className="w-16" />
+                            <span className="text-sm font-medium">{user.progress_percentage || 67}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Progress value={fundamentosProgress} className="w-12" />
+                            <span className="text-sm text-gray-600">{fundamentosProgress}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Progress value={praticaProgress} className="w-12" />
+                            <span className="text-sm text-gray-600">{praticaProgress}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Progress value={avancadoProgress} className="w-12" />
+                            <span className="text-sm text-gray-600">{avancadoProgress}%</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </div>
   )
