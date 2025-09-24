@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Users, TrendingUp, Activity, User, LogOut, Settings, UserCheck, Download, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -71,10 +70,9 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
       localStorage.removeItem("adminSession")
       localStorage.removeItem("userEmail")
       localStorage.removeItem("userLanguage")
-      console.log("[v0] Admin session cleared")
       router.push("/login")
     } catch (error) {
-      console.error("[v0] Logout error:", error)
+      console.error("Logout error:", error)
     } finally {
       setIsLoggingOut(false)
     }
@@ -94,7 +92,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
       link.click()
       document.body.removeChild(link)
     } catch (error) {
-      console.error("[v0] Download error:", error)
+      console.error("Download error:", error)
     } finally {
       setIsDownloading(false)
     }
@@ -115,20 +113,15 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
     ]
 
     const rows = filteredUsers.map((user) => {
-      const detailedProgress = getUserDetailedProgress(user)
-      const fundamentosProgress = calculateCategoryProgress(detailedProgress, "Fundamentos")
-      const praticaProgress = calculateCategoryProgress(detailedProgress, "Prática")
-      const avancadoProgress = calculateCategoryProgress(detailedProgress, "Avançado")
-
       return [
         getUserDisplayName(user),
         user.email,
         user.phone || "N/A",
         new Date(user.created_at).toLocaleDateString("pt-BR"),
         user.progress_percentage || 67,
-        fundamentosProgress,
-        praticaProgress,
-        avancadoProgress,
+        75, // Fundamentos
+        75, // Prática
+        50, // Avançado
         user.country || "N/A",
         user.city || "N/A",
       ]
@@ -138,36 +131,12 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
     return csvContent
   }
 
-  const calculateCategoryProgress = (steps: any[], category: string) => {
-    const categorySteps = steps.filter((step) => step.category === category)
-    const completedSteps = categorySteps.filter((step) => step.completed).length
-    return Math.round((completedSteps / categorySteps.length) * 100)
-  }
-
   const getUserDisplayName = (user: RecentUser) => {
     if (user.name) return user.name
     if (user.first_name || user.last_name) {
       return `${user.first_name || ""} ${user.last_name || ""}`.trim()
     }
     return user.email.split("@")[0]
-  }
-
-  const getUserDetailedProgress = (user: RecentUser) => {
-    const steps = [
-      { id: 1, name: "Registro Inicial", category: "Fundamentos", completed: true },
-      { id: 2, name: "Perfil Pessoal", category: "Fundamentos", completed: true },
-      { id: 3, name: "Objetivos", category: "Fundamentos", completed: true },
-      { id: 4, name: "Avaliação Inicial", category: "Fundamentos", completed: false },
-      { id: 5, name: "Plano de Ação", category: "Prática", completed: true },
-      { id: 6, name: "Exercícios Básicos", category: "Prática", completed: true },
-      { id: 7, name: "Acompanhamento", category: "Prática", completed: true },
-      { id: 8, name: "Revisão", category: "Prática", completed: false },
-      { id: 9, name: "Técnicas Avançadas", category: "Avançado", completed: true },
-      { id: 10, name: "Mentoria", category: "Avançado", completed: true },
-      { id: 11, name: "Projeto Final", category: "Avançado", completed: false },
-      { id: 12, name: "Certificação", category: "Avançado", completed: false },
-    ]
-    return steps
   }
 
   return (
@@ -275,7 +244,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
           </Card>
         </div>
 
-        {/* Users Table */}
+        {/* Users List */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -306,71 +275,53 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Usuario</TableHead>
-                    <TableHead>Data de Registro</TableHead>
-                    <TableHead>Progresso Total</TableHead>
-                    <TableHead>Fundamentos</TableHead>
-                    <TableHead>Prática</TableHead>
-                    <TableHead>Avançado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => {
-                    const detailedProgress = getUserDetailedProgress(user)
-                    const fundamentosProgress = calculateCategoryProgress(detailedProgress, "Fundamentos")
-                    const praticaProgress = calculateCategoryProgress(detailedProgress, "Prática")
-                    const avancadoProgress = calculateCategoryProgress(detailedProgress, "Avançado")
-
-                    return (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <User className="w-4 h-4 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900">{getUserDisplayName(user)}</p>
-                              <p className="text-sm text-gray-500">{user.email}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm text-gray-900">
-                            {new Date(user.created_at).toLocaleDateString("pt-BR")}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={user.progress_percentage || 67} className="w-16" />
-                            <span className="text-sm font-medium">{user.progress_percentage || 67}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={fundamentosProgress} className="w-12" />
-                            <span className="text-sm text-gray-600">{fundamentosProgress}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={praticaProgress} className="w-12" />
-                            <span className="text-sm text-gray-600">{praticaProgress}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={avancadoProgress} className="w-12" />
-                            <span className="text-sm text-gray-600">{avancadoProgress}%</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+              <div className="space-y-4">
+                <div className="grid grid-cols-6 gap-4 p-3 bg-gray-50 rounded-lg font-medium text-sm text-gray-700">
+                  <div>Usuario</div>
+                  <div>Data de Registro</div>
+                  <div>Progresso Total</div>
+                  <div>Fundamentos</div>
+                  <div>Prática</div>
+                  <div>Avançado</div>
+                </div>
+                {filteredUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="grid grid-cols-6 gap-4 p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{getUserDisplayName(user)}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="text-sm text-gray-900">
+                        {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Progress value={user.progress_percentage || 67} className="w-16" />
+                      <span className="text-sm font-medium">{user.progress_percentage || 67}%</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Progress value={75} className="w-12" />
+                      <span className="text-sm text-gray-600">75%</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Progress value={75} className="w-12" />
+                      <span className="text-sm text-gray-600">75%</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Progress value={50} className="w-12" />
+                      <span className="text-sm text-gray-600">50%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
