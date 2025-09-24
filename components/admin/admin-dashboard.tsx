@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Users, TrendingUp, Activity, User, LogOut, Settings, UserCheck, Download, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -71,10 +70,9 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
       localStorage.removeItem("adminSession")
       localStorage.removeItem("userEmail")
       localStorage.removeItem("userLanguage")
-      console.log("[v0] Admin session cleared")
       router.push("/login")
     } catch (error) {
-      console.error("[v0] Logout error:", error)
+      console.error("Logout error:", error)
     } finally {
       setIsLoggingOut(false)
     }
@@ -83,104 +81,32 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
   const handleDownloadReport = async () => {
     setIsDownloading(true)
     try {
-      const csvContent = generateEnhancedCSVReport()
+      const csvContent = generateCSVReport()
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
       const link = document.createElement("a")
       const url = URL.createObjectURL(blob)
       link.setAttribute("href", url)
-      link.setAttribute("download", `renove-se-relatorio-completo-${new Date().toISOString().split("T")[0]}.csv`)
+      link.setAttribute("download", `renove-se-relatorio-${new Date().toISOString().split("T")[0]}.csv`)
       link.style.visibility = "hidden"
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
     } catch (error) {
-      console.error("[v0] Download error:", error)
+      console.error("Download error:", error)
     } finally {
       setIsDownloading(false)
     }
   }
 
-  const generateEnhancedCSVReport = () => {
-    const headers = [
-      "Nome",
-      "Email",
-      "Telefone",
-      "Data de Inscrição",
-      "Progressão Total (%)",
-      "Fundamentos (%)",
-      "Prática (%)",
-      "Avançado (%)",
-      "País",
-      "Cidade",
-    ]
-
-    const rows = filteredUsers.map((user) => {
-      const detailedProgress = getUserDetailedProgress(user)
-      const fundamentosProgress = calculateCategoryProgress(detailedProgress, "Fundamentos")
-      const praticaProgress = calculateCategoryProgress(detailedProgress, "Prática")
-      const avancadoProgress = calculateCategoryProgress(detailedProgress, "Avançado")
-
-      return [
-        getUserDisplayName(user),
-        user.email,
-        user.phone || "N/A",
-        new Date(user.created_at).toLocaleDateString("pt-BR"),
-        user.progress_percentage || 67,
-        fundamentosProgress,
-        praticaProgress,
-        avancadoProgress,
-        user.country || "N/A",
-        user.city || "N/A",
-      ]
-    })
-
-    const csvContent = [headers, ...rows].map((row) => row.map((field) => `"${field}"`).join(",")).join("\n")
-    return csvContent
-  }
-
-  const calculateCategoryProgress = (steps: any[], category: string) => {
-    console.log("[v0] Calculating progress for category:", category, "with steps:", steps)
-
-    if (!steps || steps.length === 0) {
-      console.log("[v0] No steps provided, returning 0")
-      return 0
-    }
-
-    const categorySteps = steps.filter((step) => step.category === category)
-    console.log("[v0] Category steps found:", categorySteps.length)
-
-    if (categorySteps.length === 0) {
-      console.log("[v0] No steps found for category, returning 0")
-      return 0
-    }
-
-    const completedSteps = categorySteps.filter((step) => step.completed).length
-    const progress = Math.round((completedSteps / categorySteps.length) * 100)
-    console.log("[v0] Progress calculated:", progress)
-
-    return progress
-  }
-
-  const getUserDetailedProgress = (user: RecentUser) => {
-    console.log("[v0] Getting detailed progress for user:", user.email)
-
-    const steps = [
-      { id: 1, name: "Registro Inicial", category: "Fundamentos", completed: true },
-      { id: 2, name: "Perfil Pessoal", category: "Fundamentos", completed: true },
-      { id: 3, name: "Objetivos", category: "Fundamentos", completed: true },
-      { id: 4, name: "Avaliação Inicial", category: "Fundamentos", completed: false },
-      { id: 5, name: "Plano de Ação", category: "Prática", completed: true },
-      { id: 6, name: "Exercícios Básicos", category: "Prática", completed: true },
-      { id: 7, name: "Acompanhamento", category: "Prática", completed: true },
-      { id: 8, name: "Revisão", category: "Prática", completed: false },
-      { id: 9, name: "Técnicas Avançadas", category: "Avançado", completed: true },
-      { id: 10, name: "Mentoria", category: "Avançado", completed: true },
-      { id: 11, name: "Projeto Final", category: "Avançado", completed: false },
-      { id: 12, name: "Certificação", category: "Avançado", completed: false },
-    ]
-
-    console.log("[v0] Returning steps:", steps.length)
-    return steps
+  const generateCSVReport = () => {
+    const headers = ["Nome", "Email", "Data de Inscrição", "Progresso (%)"]
+    const rows = filteredUsers.map((user) => [
+      getUserDisplayName(user),
+      user.email,
+      new Date(user.created_at).toLocaleDateString("pt-BR"),
+      user.progress_percentage || 67,
+    ])
+    return [headers, ...rows].map((row) => row.map((field) => `"${field}"`).join(",")).join("\n")
   }
 
   const getUserDisplayName = (user: RecentUser) => {
@@ -327,71 +253,30 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Usuario</TableHead>
-                    <TableHead>Data de Registro</TableHead>
-                    <TableHead>Progresso Total</TableHead>
-                    <TableHead>Fundamentos</TableHead>
-                    <TableHead>Prática</TableHead>
-                    <TableHead>Avançado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => {
-                    const detailedProgress = getUserDetailedProgress(user)
-                    const fundamentosProgress = calculateCategoryProgress(detailedProgress, "Fundamentos")
-                    const praticaProgress = calculateCategoryProgress(detailedProgress, "Prática")
-                    const avancadoProgress = calculateCategoryProgress(detailedProgress, "Avançado")
-
-                    return (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <User className="w-4 h-4 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900">{getUserDisplayName(user)}</p>
-                              <p className="text-sm text-gray-500">{user.email}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm text-gray-900">
-                            {new Date(user.created_at).toLocaleDateString("pt-BR")}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={user.progress_percentage || 67} className="w-16" />
-                            <span className="text-sm font-medium">{user.progress_percentage || 67}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={fundamentosProgress} className="w-12" />
-                            <span className="text-sm text-gray-600">{fundamentosProgress}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={praticaProgress} className="w-12" />
-                            <span className="text-sm text-gray-600">{praticaProgress}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Progress value={avancadoProgress} className="w-12" />
-                            <span className="text-sm text-gray-600">{avancadoProgress}%</span>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+              <div className="space-y-4">
+                {filteredUsers.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{getUserDisplayName(user)}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center space-x-2">
+                        <Progress value={user.progress_percentage || 67} className="w-20" />
+                        <span className="text-sm font-medium">{user.progress_percentage || 67}%</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
