@@ -29,89 +29,107 @@ export default function AdminPage() {
 
         const supabase = createClient()
 
-        // Try to get data using service role permissions
-        console.log("[v0] Fetching user data with admin permissions...")
-
-        // Get all profiles with better error handling
+        console.log("[v0] Fetching user profiles data...")
         const {
           data: allProfiles,
           error: profilesError,
           count: totalCount,
-        } = await supabase.from("profiles").select("*", { count: "exact" }).order("created_at", { ascending: false })
+        } = await supabase
+          .from("user_profiles")
+          .select("*", { count: "exact" })
+          .order("created_at", { ascending: false })
 
-        console.log("[v0] Profiles query result:", {
+        console.log("[v0] User profiles query result:", {
           data: allProfiles,
           error: profilesError,
           count: totalCount,
           dataLength: allProfiles?.length,
         })
 
-        if (profilesError) {
-          console.error("[v0] Profiles error:", profilesError)
-          console.log("[v0] Trying alternative data access method...")
+        let profiles = allProfiles || []
 
-          // Create a more detailed error log
-          console.error("[v0] Detailed error:", {
-            message: profilesError.message,
-            details: profilesError.details,
-            hint: profilesError.hint,
-            code: profilesError.code,
-          })
+        if (profilesError) {
+          console.error("[v0] Error fetching user profiles:", profilesError)
+          // Try alternative method - direct auth users query
+          const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
+          console.log("[v0] Auth users fallback:", { authUsers, authError })
+
+          if (authUsers?.users) {
+            profiles = authUsers.users.map((user) => ({
+              id: user.id,
+              user_id: user.id,
+              email: user.email,
+              display_name: user.email?.split("@")[0] || "Unknown",
+              created_at: user.created_at,
+              updated_at: user.updated_at,
+            }))
+          }
         }
+
+        console.log("[v0] Fetching user progress...")
+        const { data: progressData, error: progressError } = await supabase
+          .from("user_progress")
+          .select(`
+            *,
+            user_profiles!inner(email, display_name)
+          `)
+          .order("updated_at", { ascending: false })
+
+        console.log("[v0] Progress query result:", {
+          data: progressData,
+          error: progressError,
+          count: progressData?.length,
+        })
 
         // Calculate statistics from the data we have
         const now = new Date()
         const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
         const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
-        const profiles = allProfiles || []
         const totalUsers = profiles.length
         const newUsersWeek = profiles.filter((p) => new Date(p.created_at) >= oneWeekAgo).length
         const newUsersMonth = profiles.filter((p) => new Date(p.created_at) >= oneMonthAgo).length
 
-        let totalCompletions = 0
-        try {
-          // Check localStorage for protocol completion data
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i)
-            if (key && key.includes("protocol_") && key.includes("_progress")) {
-              const progressData = JSON.parse(localStorage.getItem(key) || "{}")
-              if (progressData.status === "completed") {
-                totalCompletions++
-              }
-            }
-          }
-        } catch (error) {
-          console.log("[v0] Error calculating completions from localStorage:", error)
-        }
+        const totalCompletions = progressData ? progressData.filter((p) => p.status === "completed").length : 0
+        const activeUsersWeek = progressData
+          ? new Set(progressData.filter((p) => new Date(p.updated_at) >= oneWeekAgo).map((p) => p.user_id)).size
+          : 0
 
         const stats = {
           total_users: totalUsers,
           new_users_week: newUsersWeek,
           new_users_month: newUsersMonth,
           total_completions: totalCompletions,
-          active_users_week: newUsersWeek,
-          active_users_month: newUsersMonth,
+          active_users_week: activeUsersWeek,
+          active_users_month: newUsersMonth, // Approximation
         }
 
         console.log("[v0] Calculated stats:", stats)
 
         // Get recent users (limit to 10)
-        const recentUsers = profiles.slice(0, 10)
+        const recentUsers = profiles.slice(0, 10).map((profile) => ({
+          ...profile,
+          first_name: profile.display_name || profile.email?.split("@")[0] || "Unknown",
+          last_name: "",
+        }))
 
         console.log("[v0] Recent users:", recentUsers)
 
-        const progressSummary = profiles.map((profile) => ({
-          user_id: profile.id,
-          email: profile.email,
-          step_category: "onboarding",
-          status: "in_progress",
-          profiles: {
-            email: profile.email,
-            first_name: profile.first_name || profile.email.split("@")[0],
-            last_name: profile.last_name || "",
-          },
-        }))
+        const progressSummary = progressData
+          ? progressData.map((progress) => ({
+              user_id: progress.user_id,
+              email: progress.user_profiles?.email || "Unknown",
+              protocol_id: progress.protocol_id,
+              status: progress.status,
+              progress_percentage: progress.progress_percentage,
+              profiles: {
+                email: progress.user_profiles?.email || "Unknown",
+                first_name:
+                  progress.user_profiles?.display_name || progress.user_profiles?.email?.split("@")[0] || "Unknown",
+                last_name: "",
+              },
+            }))
+          : []
 
         console.log("[v0] Final dashboard data:", {
           totalUsers,

@@ -52,91 +52,149 @@ export default function DashboardPage() {
       }
 
       setUserEmail(user.email || "")
+
+      await migrateLocalStorageToDatabase(user.id, user.email || "")
+      await loadUserProgressFromDatabase(user.id)
     }
 
     checkAuth()
+  }, [router])
 
-    const email = localStorage.getItem("userEmail")
-    const language = (localStorage.getItem("userLanguage") as Language) || "pt"
+  const migrateLocalStorageToDatabase = async (userId: string, email: string) => {
+    const supabase = createClient()
 
-    if (!email) {
-      router.push("/")
-      return
-    }
+    try {
+      // Create or update user profile
+      const { error: profileError } = await supabase.from("user_profiles").upsert({
+        user_id: userId,
+        email: email,
+        display_name: email.split("@")[0],
+        language: (localStorage.getItem("userLanguage") as Language) || "pt",
+      })
 
-    setUserEmail(email)
-    setT(getTranslations(language))
-
-    const baseProtocols: Protocol[] = [
-      {
-        id: "1",
-        titleKey: "protocol1Title",
-        descriptionKey: "protocol1Description",
-        icon: <User className="w-6 h-6" />,
-        status: "new",
-        estimatedTime: `15 ${getTranslations(language).minutes}`,
-      },
-      {
-        id: "2",
-        titleKey: "protocol2Title",
-        descriptionKey: "protocol2Description",
-        icon: <MessageCircle className="w-6 h-6" />,
-        status: "new",
-        estimatedTime: `20 ${getTranslations(language).minutes}`,
-      },
-      {
-        id: "3",
-        titleKey: "protocol3Title",
-        descriptionKey: "protocol3Description",
-        icon: <Brain className="w-6 h-6" />,
-        status: "new",
-        estimatedTime: `18 ${getTranslations(language).minutes}`,
-      },
-      {
-        id: "4",
-        titleKey: "protocol4Title",
-        descriptionKey: "protocol4Description",
-        icon: <Sparkles className="w-6 h-6" />,
-        status: "new",
-        estimatedTime: `25 ${getTranslations(language).minutes}`,
-      },
-      {
-        id: "5",
-        titleKey: "protocol5Title",
-        descriptionKey: "protocol5Description",
-        icon: <Target className="w-6 h-6" />,
-        status: "new",
-        estimatedTime: `12 ${getTranslations(language).minutes}`,
-      },
-      {
-        id: "6",
-        titleKey: "protocol6Title",
-        descriptionKey: "protocol6Description",
-        icon: <BookOpen className="w-6 h-6" />,
-        status: "new",
-        estimatedTime: `10 ${getTranslations(language).minutes}`,
-      },
-    ]
-
-    // Update protocols with saved progress
-    const updatedProtocols = baseProtocols.map((protocol) => {
-      const progressKey = `protocol_${protocol.id}_progress`
-      const savedProgress = localStorage.getItem(progressKey)
-
-      if (savedProgress) {
-        const progressData = JSON.parse(savedProgress)
-        return {
-          ...protocol,
-          status: progressData.status,
-          progress: Math.round((progressData.completedSections / progressData.totalSections) * 100),
-        }
+      if (profileError) {
+        console.error("[v0] Error creating profile:", profileError)
       }
 
-      return protocol
-    })
+      // Migrate progress data from localStorage
+      const progressPromises = ["1", "2", "3", "4", "5", "6"].map(async (protocolId) => {
+        const progressKey = `protocol_${protocolId}_progress`
+        const savedProgress = localStorage.getItem(progressKey)
 
-    setProtocols(updatedProtocols)
-  }, [router])
+        if (savedProgress) {
+          const progressData = JSON.parse(savedProgress)
+
+          const { error } = await supabase.from("user_progress").upsert({
+            user_id: userId,
+            protocol_id: protocolId,
+            status: progressData.status,
+            progress_percentage: Math.round((progressData.completedSections / progressData.totalSections) * 100),
+            completed_sections: progressData.completedSections,
+            total_sections: progressData.totalSections,
+            completed_at: progressData.status === "completed" ? new Date().toISOString() : null,
+          })
+
+          if (error) {
+            console.error(`[v0] Error migrating progress for protocol ${protocolId}:`, error)
+          } else {
+            console.log(`[v0] Successfully migrated progress for protocol ${protocolId}`)
+          }
+        }
+      })
+
+      await Promise.all(progressPromises)
+      console.log("[v0] Migration completed successfully")
+    } catch (error) {
+      console.error("[v0] Error during migration:", error)
+    }
+  }
+
+  const loadUserProgressFromDatabase = async (userId: string) => {
+    const supabase = createClient()
+
+    try {
+      const { data: progressData, error } = await supabase.from("user_progress").select("*").eq("user_id", userId)
+
+      if (error) {
+        console.error("[v0] Error loading progress:", error)
+        return
+      }
+
+      const language = (localStorage.getItem("userLanguage") as Language) || "pt"
+      setT(getTranslations(language))
+
+      const baseProtocols: Protocol[] = [
+        {
+          id: "1",
+          titleKey: "protocol1Title",
+          descriptionKey: "protocol1Description",
+          icon: <User className="w-6 h-6" />,
+          status: "new",
+          estimatedTime: `15 ${getTranslations(language).minutes}`,
+        },
+        {
+          id: "2",
+          titleKey: "protocol2Title",
+          descriptionKey: "protocol2Description",
+          icon: <MessageCircle className="w-6 h-6" />,
+          status: "new",
+          estimatedTime: `20 ${getTranslations(language).minutes}`,
+        },
+        {
+          id: "3",
+          titleKey: "protocol3Title",
+          descriptionKey: "protocol3Description",
+          icon: <Brain className="w-6 h-6" />,
+          status: "new",
+          estimatedTime: `18 ${getTranslations(language).minutes}`,
+        },
+        {
+          id: "4",
+          titleKey: "protocol4Title",
+          descriptionKey: "protocol4Description",
+          icon: <Sparkles className="w-6 h-6" />,
+          status: "new",
+          estimatedTime: `25 ${getTranslations(language).minutes}`,
+        },
+        {
+          id: "5",
+          titleKey: "protocol5Title",
+          descriptionKey: "protocol5Description",
+          icon: <Target className="w-6 h-6" />,
+          status: "new",
+          estimatedTime: `12 ${getTranslations(language).minutes}`,
+        },
+        {
+          id: "6",
+          titleKey: "protocol6Title",
+          descriptionKey: "protocol6Description",
+          icon: <BookOpen className="w-6 h-6" />,
+          status: "new",
+          estimatedTime: `10 ${getTranslations(language).minutes}`,
+        },
+      ]
+
+      // Update protocols with database progress
+      const updatedProtocols = baseProtocols.map((protocol) => {
+        const dbProgress = progressData?.find((p) => p.protocol_id === protocol.id)
+
+        if (dbProgress) {
+          return {
+            ...protocol,
+            status: dbProgress.status,
+            progress: dbProgress.progress_percentage,
+          }
+        }
+
+        return protocol
+      })
+
+      setProtocols(updatedProtocols)
+      console.log("[v0] Loaded progress from database:", progressData)
+    } catch (error) {
+      console.error("[v0] Error loading progress from database:", error)
+    }
+  }
 
   const overallProgress =
     protocols.length > 0

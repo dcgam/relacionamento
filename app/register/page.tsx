@@ -63,7 +63,7 @@ export default function RegisterPage() {
     const supabase = createClient()
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -74,8 +74,28 @@ export default function RegisterPage() {
 
       if (error) throw error
 
+      // If user was created successfully, ensure profile exists
+      if (data.user) {
+        console.log("[v0] User created successfully:", data.user.email)
+
+        // Try to create profile (trigger should handle this, but backup)
+        const { error: profileError } = await supabase.from("profiles").upsert({
+          id: data.user.id,
+          email: data.user.email,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+
+        if (profileError) {
+          console.log("[v0] Profile creation error (may be normal if trigger worked):", profileError)
+        } else {
+          console.log("[v0] Profile created successfully")
+        }
+      }
+
       router.push("/auth/sign-up-success")
     } catch (err: any) {
+      console.log("[v0] Registration error:", err)
       setError(err.message || "Erro ao criar conta")
     } finally {
       setIsLoading(false)
