@@ -139,21 +139,31 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
   }
 
   const calculateCategoryProgress = (steps: any[], category: string) => {
-    const categorySteps = steps.filter((step) => step.category === category)
-    if (categorySteps.length === 0) return 0
-    const completedSteps = categorySteps.filter((step) => step.completed).length
-    return Math.round((completedSteps / categorySteps.length) * 100)
-  }
+    console.log("[v0] Calculating progress for category:", category, "with steps:", steps)
 
-  const getUserDisplayName = (user: RecentUser) => {
-    if (user.name) return user.name
-    if (user.first_name || user.last_name) {
-      return `${user.first_name || ""} ${user.last_name || ""}`.trim()
+    if (!steps || steps.length === 0) {
+      console.log("[v0] No steps provided, returning 0")
+      return 0
     }
-    return user.email.split("@")[0]
+
+    const categorySteps = steps.filter((step) => step.category === category)
+    console.log("[v0] Category steps found:", categorySteps.length)
+
+    if (categorySteps.length === 0) {
+      console.log("[v0] No steps found for category, returning 0")
+      return 0
+    }
+
+    const completedSteps = categorySteps.filter((step) => step.completed).length
+    const progress = Math.round((completedSteps / categorySteps.length) * 100)
+    console.log("[v0] Progress calculated:", progress)
+
+    return progress
   }
 
   const getUserDetailedProgress = (user: RecentUser) => {
+    console.log("[v0] Getting detailed progress for user:", user.email)
+
     const steps = [
       { id: 1, name: "Registro Inicial", category: "Fundamentos", completed: true },
       { id: 2, name: "Perfil Pessoal", category: "Fundamentos", completed: true },
@@ -168,7 +178,17 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
       { id: 11, name: "Projeto Final", category: "Avançado", completed: false },
       { id: 12, name: "Certificação", category: "Avançado", completed: false },
     ]
+
+    console.log("[v0] Returning steps:", steps.length)
     return steps
+  }
+
+  const getUserDisplayName = (user: RecentUser) => {
+    if (user.name) return user.name
+    if (user.first_name || user.last_name) {
+      return `${user.first_name || ""} ${user.last_name || ""}`.trim()
+    }
+    return user.email.split("@")[0]
   }
 
   return (
