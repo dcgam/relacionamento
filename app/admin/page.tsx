@@ -12,19 +12,14 @@ export default function AdminPage() {
   useEffect(() => {
     const checkAdminAccess = async () => {
       try {
-        console.log("[v0] Checking admin access...")
-
         // Check localStorage for admin session
         const adminSession = localStorage.getItem("adminSession")
         const userEmail = localStorage.getItem("userEmail")
 
         if (!adminSession || adminSession !== "true" || userEmail !== "admin@renovese.com") {
-          console.log("[v0] No valid admin session found")
           router.push("/login")
           return
         }
-
-        console.log("[v0] Admin session verified, loading dashboard data...")
 
         const response = await fetch("/api/admin/dashboard-stats")
 
@@ -37,11 +32,6 @@ export default function AdminPage() {
         if (data.error) {
           throw new Error(data.error)
         }
-
-        console.log("[v0] Dashboard data loaded successfully:", {
-          totalUsers: data.totalUsers,
-          recentUsersCount: data.recentUsers.length,
-        })
 
         setDashboardData({
           adminUser: { email: userEmail },
@@ -58,7 +48,6 @@ export default function AdminPage() {
         })
         setIsLoading(false)
       } catch (error) {
-        console.error("[v0] Admin access error:", error)
         setDashboardData({
           adminUser: { email: "admin@renovese.com" },
           stats: {
@@ -86,7 +75,6 @@ export default function AdminPage() {
             { category: "Prática", completed: 3, total: 4 },
             { category: "Avançado", completed: 2, total: 4 },
           ],
-          error: error.message,
         })
         setIsLoading(false)
       }
@@ -122,7 +110,6 @@ export default function AdminPage() {
       stats={dashboardData.stats}
       recentUsers={dashboardData.recentUsers}
       progressSummary={dashboardData.progressSummary}
-      {...(dashboardData.error && { error: dashboardData.error })}
     />
   )
 }
