@@ -263,24 +263,23 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Users Table */}
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
                   <span className="text-lg">👥</span>
-                  <span>Lista de Usuarios</span>
+                  <span>Lista de Clientes - Tabela Completa</span>
                 </h2>
-                <p className="text-sm text-gray-500">Gestión y seguimiento de usuarios registrados</p>
+                <p className="text-sm text-gray-500">Gestión completa con ID, data, telefone e exportação</p>
               </div>
               <Button
                 onClick={exportClients}
                 disabled={exporting}
-                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2"
               >
                 <Download className="w-4 h-4" />
-                {exporting ? "Exportando..." : "Exportar CSV"}
+                {exporting ? "Exportando..." : "Exportar Base CSV"}
               </Button>
             </div>
           </div>
@@ -294,28 +293,32 @@ export default function AdminPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-20">ID</TableHead>
-                      <TableHead>Data de Inscrição</TableHead>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Telefone</TableHead>
-                      <TableHead className="w-48">Progressão Geral</TableHead>
+                      <TableHead className="w-20 font-semibold">ID</TableHead>
+                      <TableHead className="font-semibold">Data de Inscrição</TableHead>
+                      <TableHead className="font-semibold">Nome</TableHead>
+                      <TableHead className="font-semibold">Email</TableHead>
+                      <TableHead className="font-semibold">Telefone</TableHead>
+                      <TableHead className="w-48 font-semibold">Progressão Geral</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {clients.map((client, index) => (
-                      <TableRow key={client.id}>
-                        <TableCell className="font-medium">
-                          {(currentPage - 1) * CLIENTS_PER_PAGE + index + 1}
+                      <TableRow key={client.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium text-blue-600">
+                          #{(currentPage - 1) * CLIENTS_PER_PAGE + index + 1}
                         </TableCell>
-                        <TableCell>{format(new Date(client.created_at), "dd/MM/yyyy", { locale: ptBR })}</TableCell>
+                        <TableCell className="font-medium">
+                          {format(new Date(client.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </TableCell>
                         <TableCell className="font-medium">{client.display_name}</TableCell>
                         <TableCell>{client.email}</TableCell>
-                        <TableCell className="text-gray-500">{client.phone}</TableCell>
+                        <TableCell className="text-gray-600 font-mono">{client.phone}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Progress value={client.progress_percentage} className="flex-1 h-2" />
-                            <span className="text-sm font-medium w-12 text-right">{client.progress_percentage}%</span>
+                            <Progress value={client.progress_percentage} className="flex-1 h-3" />
+                            <span className="text-sm font-bold w-12 text-right text-blue-600">
+                              {client.progress_percentage}%
+                            </span>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -323,9 +326,8 @@ export default function AdminPage() {
                   </TableBody>
                 </Table>
 
-                {/* Pagination */}
-                <div className="flex items-center justify-between mt-6">
-                  <div className="text-sm text-gray-500">
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                  <div className="text-sm text-gray-500 font-medium">
                     Mostrando {(currentPage - 1) * CLIENTS_PER_PAGE + 1} a{" "}
                     {Math.min(currentPage * CLIENTS_PER_PAGE, totalClients)} de {totalClients} clientes
                   </div>
@@ -336,14 +338,14 @@ export default function AdminPage() {
                       size="sm"
                       onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-1 font-medium"
                     >
                       <ChevronLeft className="w-4 h-4" />
                       Anteriores 20
                     </Button>
 
-                    <div className="flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-md">
-                      <span className="text-sm">
+                    <div className="flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-md">
+                      <span className="text-sm font-medium">
                         Página {currentPage} de {Math.ceil(totalClients / CLIENTS_PER_PAGE)}
                       </span>
                     </div>
@@ -355,7 +357,7 @@ export default function AdminPage() {
                         setCurrentPage((prev) => Math.min(Math.ceil(totalClients / CLIENTS_PER_PAGE), prev + 1))
                       }
                       disabled={currentPage === Math.ceil(totalClients / CLIENTS_PER_PAGE)}
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-1 font-medium"
                     >
                       Próximos 20
                       <ChevronRight className="w-4 h-4" />
