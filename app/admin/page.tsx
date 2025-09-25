@@ -274,9 +274,13 @@ export default function AdminPage() {
                 </h2>
                 <p className="text-sm text-gray-500">Gestión y seguimiento de usuarios registrados</p>
               </div>
-              <Button onClick={exportClients} disabled={exporting} className="flex items-center gap-2">
+              <Button
+                onClick={exportClients}
+                disabled={exporting}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+              >
                 <Download className="w-4 h-4" />
-                {exporting ? "Exportando..." : "Exportar Base"}
+                {exporting ? "Exportando..." : "Exportar CSV"}
               </Button>
             </div>
           </div>
@@ -340,15 +344,17 @@ export default function AdminPage() {
 
                     <div className="flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-md">
                       <span className="text-sm">
-                        Página {currentPage} de {totalPages}
+                        Página {currentPage} de {Math.ceil(totalClients / CLIENTS_PER_PAGE)}
                       </span>
                     </div>
 
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(Math.ceil(totalClients / CLIENTS_PER_PAGE), prev + 1))
+                      }
+                      disabled={currentPage === Math.ceil(totalClients / CLIENTS_PER_PAGE)}
                       className="flex items-center gap-1"
                     >
                       Próximos 20
