@@ -17,6 +17,7 @@ import {
   LogOut,
   Sparkles,
   CheckCircle,
+  Users,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslations, type Language, getTranslations } from "@/lib/i18n"
@@ -417,10 +418,18 @@ export default function DashboardPage() {
                   </Button>
                 </Link>
 
-                <Link href="/reflections" className="block">
+                <Link href="/analytics" className="block">
                   <Button variant="outline" className="w-full justify-start bg-transparent">
                     <Calendar className="w-4 h-4 mr-3" />
                     Reflexão Diária
+                    <ArrowRight className="w-4 h-4 ml-auto" />
+                  </Button>
+                </Link>
+
+                <Link href="/clientes" className="block">
+                  <Button variant="outline" className="w-full justify-start bg-transparent">
+                    <Users className="w-4 h-4 mr-3" />
+                    Gerenciar Clientes
                     <ArrowRight className="w-4 h-4 ml-auto" />
                   </Button>
                 </Link>
