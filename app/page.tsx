@@ -13,7 +13,7 @@ import Link from "next/link"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { createClient } from "@/lib/supabase/client"
 
-export default function LoginPage() {
+export default function HomePage() {
   const t = useTranslations()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -29,6 +29,9 @@ export default function LoginPage() {
       } = await supabase.auth.getUser()
       if (user) {
         router.push("/dashboard")
+      } else {
+        // Redirect to landing page
+        router.push("/landing")
       }
     }
     checkUser()

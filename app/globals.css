@@ -4,79 +4,79 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color palette for Renove-se brand */
-  --background: oklch(0.98 0 0); /* Light gray background */
-  --foreground: oklch(0.15 0.05 240); /* Dark navy blue text */
+  /* Updated color palette inspired by the purple gradient design */
+  --background: oklch(0.99 0 0); /* Pure white background */
+  --foreground: oklch(0.2 0.02 270); /* Deep purple-gray text */
   --card: oklch(1 0 0); /* White card backgrounds */
-  --card-foreground: oklch(0.15 0.05 240); /* Dark navy blue text on cards */
+  --card-foreground: oklch(0.2 0.02 270); /* Deep purple-gray text on cards */
   --popover: oklch(1 0 0); /* White popover backgrounds */
-  --popover-foreground: oklch(0.15 0.05 240); /* Dark navy blue text in popovers */
-  --primary: oklch(0.15 0.05 240); /* Dark navy blue primary (#0A1C41) */
+  --popover-foreground: oklch(0.2 0.02 270); /* Deep purple-gray text in popovers */
+  --primary: oklch(0.55 0.2 285); /* Rich purple primary (#8B5CF6) */
   --primary-foreground: oklch(1 0 0); /* White text on primary buttons */
-  --secondary: oklch(0.85 0.15 85); /* Light gold secondary (#FFD700) */
-  --secondary-foreground: oklch(0.15 0.05 240); /* Dark navy blue text on secondary buttons */
-  --muted: oklch(0.96 0 0); /* Light gray for muted elements */
-  --muted-foreground: oklch(0.45 0.02 240); /* Muted navy blue text */
-  --accent: oklch(0.85 0.15 85); /* Light gold for accents */
-  --accent-foreground: oklch(0.15 0.05 240); /* Dark navy blue text on accent elements */
+  --secondary: oklch(0.95 0.02 285); /* Very light purple secondary */
+  --secondary-foreground: oklch(0.2 0.02 270); /* Deep purple-gray text on secondary */
+  --muted: oklch(0.97 0.01 270); /* Light purple-gray for muted elements */
+  --muted-foreground: oklch(0.5 0.02 270); /* Medium purple-gray text */
+  --accent: oklch(0.65 0.25 285); /* Vibrant purple for accents */
+  --accent-foreground: oklch(1 0 0); /* White text on accent elements */
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.9 0 0); /* Light gray borders */
+  --border: oklch(0.92 0.01 270); /* Light purple-gray borders */
   --input: oklch(1 0 0); /* White input fields */
-  --ring: oklch(0.15 0.05 240 / 0.2); /* Soft navy blue ring effect */
-  --chart-1: oklch(0.15 0.05 240);
-  --chart-2: oklch(0.85 0.15 85);
-  --chart-3: oklch(0.96 0 0);
-  --chart-4: oklch(0.45 0.02 240);
-  --chart-5: oklch(0.6 0.1 200);
-  --radius: 0.5rem; /* Rounded corners for soft appearance */
+  --ring: oklch(0.55 0.2 285 / 0.3); /* Purple ring effect */
+  --chart-1: oklch(0.55 0.2 285);
+  --chart-2: oklch(0.65 0.25 285);
+  --chart-3: oklch(0.75 0.15 285);
+  --chart-4: oklch(0.45 0.25 285);
+  --chart-5: oklch(0.35 0.2 285);
+  --radius: 0.75rem; /* More rounded corners for modern look */
   --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.15 0.05 240);
-  --sidebar-primary: oklch(0.15 0.05 240);
+  --sidebar-foreground: oklch(0.2 0.02 270);
+  --sidebar-primary: oklch(0.55 0.2 285);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.85 0.15 85);
-  --sidebar-accent-foreground: oklch(0.15 0.05 240);
-  --sidebar-border: oklch(0.9 0 0);
-  --sidebar-ring: oklch(0.15 0.05 240 / 0.1);
+  --sidebar-accent: oklch(0.95 0.02 285);
+  --sidebar-accent-foreground: oklch(0.2 0.02 270);
+  --sidebar-border: oklch(0.92 0.01 270);
+  --sidebar-ring: oklch(0.55 0.2 285 / 0.2);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: oklch(0.08 0.01 270);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.1 0.01 270);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.1 0.01 270);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.65 0.25 285);
+  --primary-foreground: oklch(0.08 0.01 270);
+  --secondary: oklch(0.15 0.02 270);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.15 0.02 270);
+  --muted-foreground: oklch(0.7 0.02 270);
+  --accent: oklch(0.65 0.25 285);
+  --accent-foreground: oklch(0.08 0.01 270);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.2 0.02 270);
+  --input: oklch(0.15 0.02 270);
+  --ring: oklch(0.65 0.25 285 / 0.3);
+  --chart-1: oklch(0.65 0.25 285);
+  --chart-2: oklch(0.75 0.15 285);
+  --chart-3: oklch(0.55 0.2 285);
+  --chart-4: oklch(0.45 0.25 285);
+  --chart-5: oklch(0.35 0.2 285);
+  --sidebar: oklch(0.1 0.01 270);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: oklch(0.65 0.25 285);
+  --sidebar-primary-foreground: oklch(0.08 0.01 270);
+  --sidebar-accent: oklch(0.15 0.02 270);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.2 0.02 270);
+  --sidebar-ring: oklch(0.65 0.25 285 / 0.2);
 }
 
 @theme inline {
-  /* Using Inter font instead of Geist fonts */
+  /* Using Inter font */
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
   --color-background: var(--background);
@@ -123,5 +123,43 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Custom gradient backgrounds inspired by the design */
+.gradient-purple {
+  background: linear-gradient(135deg, oklch(0.55 0.2 285) 0%, oklch(0.45 0.25 285) 100%);
+}
+
+.gradient-purple-light {
+  background: linear-gradient(135deg, oklch(0.95 0.02 285) 0%, oklch(0.92 0.01 270) 100%);
+}
+
+/* Smooth animations */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
