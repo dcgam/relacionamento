@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
-import { Users, TrendingUp, Activity, User, LogOut, Settings, UserCheck, Download, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 interface AdminUser {
@@ -126,7 +125,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Settings className="w-5 h-5 text-white" />
+                  <span className="text-white font-bold text-sm">⚙</span>
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">Panel de Administración</h1>
@@ -143,7 +142,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
                 disabled={isDownloading}
                 className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300 bg-transparent"
               >
-                <Download className="w-4 h-4 mr-2" />
+                <span className="mr-2">⬇</span>
                 {isDownloading ? "Baixando..." : "Baixar Relatório"}
               </Button>
 
@@ -158,7 +157,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
                 disabled={isLoggingOut}
                 className="text-gray-600 hover:text-gray-900 bg-transparent"
               >
-                <LogOut className="w-4 h-4 mr-2" />
+                <span className="mr-2">→</span>
                 {isLoggingOut ? "Salindo..." : "Salir"}
               </Button>
             </div>
@@ -180,7 +179,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Total Usuarios</CardTitle>
-              <Users className="h-4 w-4 text-blue-600" />
+              <span className="text-blue-600 text-lg">👥</span>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{stats?.total_users || 0}</div>
@@ -191,7 +190,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Nuevos esta semana</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <span className="text-green-600 text-lg">📈</span>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{stats?.new_users_week || 0}</div>
@@ -202,7 +201,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Usuarios activos</CardTitle>
-              <Activity className="h-4 w-4 text-purple-600" />
+              <span className="text-purple-600 text-lg">⚡</span>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{stats?.active_users_week || 0}</div>
@@ -213,7 +212,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Completaciones</CardTitle>
-              <UserCheck className="h-4 w-4 text-orange-600" />
+              <span className="text-orange-600 text-lg">✅</span>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">{stats?.total_completions || 0}</div>
@@ -228,13 +227,13 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center space-x-2">
-                  <Users className="w-5 h-5" />
+                  <span className="text-lg">👥</span>
                   <span>Lista de Usuarios</span>
                 </CardTitle>
                 <CardDescription>Gestión y seguimiento de usuarios registrados</CardDescription>
               </div>
               <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
                 <Input
                   placeholder="Buscar por nome ou email..."
                   value={searchTerm}
@@ -247,7 +246,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
           <CardContent>
             {filteredUsers.length === 0 ? (
               <div className="text-center py-8">
-                <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <span className="text-4xl text-gray-400 block mb-4">👤</span>
                 <p className="text-gray-500">
                   {searchTerm ? "Nenhum usuário encontrado" : "No hay usuarios registrados"}
                 </p>
@@ -258,7 +257,7 @@ export function AdminDashboard({ adminUser, stats, recentUsers, progressSummary,
                   <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-blue-600" />
+                        <span className="text-blue-600">👤</span>
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{getUserDisplayName(user)}</p>
