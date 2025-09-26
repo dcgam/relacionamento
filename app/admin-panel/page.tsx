@@ -60,19 +60,19 @@ export default function AdminPanelPage() {
     try {
       console.log("[v0] Fetching clients from database...")
 
-      // Get total count from users table (not user_profiles)
-      const { count } = await supabase.from("users").select("*", { count: "exact", head: true })
+      // Get total count from user_profiles table
+      const { count } = await supabase.from("user_profiles").select("*", { count: "exact", head: true })
       setTotalClients(count || 0)
       console.log("[v0] Total clients found:", count)
 
-      // Get paginated clients with progress data from users table
-      const { data: users, error } = await supabase
-        .from("users")
+      // Get paginated clients with progress data from user_profiles table
+      const { data: userProfiles, error } = await supabase
+        .from("user_profiles")
         .select(`
           id,
+          user_id,
           email,
           display_name,
-          phone,
           created_at,
           user_progress (
             progress_percentage
@@ -86,16 +86,16 @@ export default function AdminPanelPage() {
         throw error
       }
 
-      console.log("[v0] Users data received:", users)
+      console.log("[v0] User profiles data received:", userProfiles)
 
       const clientsData =
-        users?.map((user, index) => ({
-          id: user.id,
-          email: user.email || "",
-          display_name: user.display_name || "Sem nome",
-          created_at: user.created_at,
-          progress_percentage: user.user_progress?.[0]?.progress_percentage || 0,
-          phone: user.phone || "+55 (11) 99999-9999", // Use actual phone or placeholder
+        userProfiles?.map((profile, index) => ({
+          id: profile.id,
+          email: profile.email || "",
+          display_name: profile.display_name || "Sem nome",
+          created_at: profile.created_at,
+          progress_percentage: profile.user_progress?.[0]?.progress_percentage || 0,
+          phone: "+55 (11) 99999-9999", // Placeholder since phone is not in user_profiles
         })) || []
 
       console.log("[v0] Processed clients data:", clientsData)
@@ -112,13 +112,13 @@ export default function AdminPanelPage() {
     const supabase = createClient()
 
     try {
-      const { data: allUsers, error } = await supabase
-        .from("users")
+      const { data: allUserProfiles, error } = await supabase
+        .from("user_profiles")
         .select(`
           id,
+          user_id,
           email,
           display_name,
-          phone,
           created_at,
           user_progress (
             progress_percentage
@@ -131,20 +131,20 @@ export default function AdminPanelPage() {
         throw error
       }
 
-      console.log("[v0] Export data received:", allUsers)
+      console.log("[v0] Export data received:", allUserProfiles)
 
-      if (!allUsers || allUsers.length === 0) {
+      if (!allUserProfiles || allUserProfiles.length === 0) {
         alert("Nenhum cliente encontrado para exportar.")
         return
       }
 
-      const exportData = allUsers.map((user, index) => ({
+      const exportData = allUserProfiles.map((profile, index) => ({
         "Número de Inscrição": index + 1,
-        "Data de Inscrição": format(new Date(user.created_at), "dd/MM/yyyy", { locale: ptBR }),
-        Nome: user.display_name || "Sem nome",
-        Email: user.email || "",
-        Telefone: user.phone || "+55 (11) 99999-9999",
-        "Progressão (%)": user.user_progress?.[0]?.progress_percentage || 0,
+        "Data de Inscrição": format(new Date(profile.created_at), "dd/MM/yyyy", { locale: ptBR }),
+        Nome: profile.display_name || "Sem nome",
+        Email: profile.email || "",
+        Telefone: "+55 (11) 99999-9999", // Placeholder
+        "Progressão (%)": profile.user_progress?.[0]?.progress_percentage || 0,
       }))
 
       // Convert to CSV with proper encoding
@@ -387,7 +387,7 @@ export default function AdminPanelPage() {
                         </TableCell>
                         <TableCell className="font-medium">{client.display_name}</TableCell>
                         <TableCell>{client.email}</TableCell>
-                        <TableCell className="text-gray-600 font-mono">{client.phone}</TableCell>
+                        <TableCell className="text-gray-600 font-mono">{"+55 (11) 99999-9999"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Progress value={client.progress_percentage} className="flex-1 h-3" />

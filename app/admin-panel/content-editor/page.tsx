@@ -395,12 +395,12 @@ export default function ContentEditorPage() {
                     Novo Módulo
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
                   <DialogHeader>
                     <DialogTitle>{editingModule ? "Editar Módulo" : "Criar Novo Módulo"}</DialogTitle>
                     <DialogDescription>Configure as informações básicas do módulo de transformação</DialogDescription>
                   </DialogHeader>
-                  <div className="max-h-[70vh] overflow-y-auto px-1">
+                  <div className="max-h-[65vh] overflow-y-auto px-1">
                     <ModuleForm
                       module={editingModule}
                       onSave={saveModule}
@@ -511,12 +511,12 @@ export default function ContentEditorPage() {
                         Nova Seção
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden">
                       <DialogHeader>
                         <DialogTitle>{editingSection ? "Editar Seção" : "Criar Nova Seção"}</DialogTitle>
                         <DialogDescription>Configure o conteúdo da seção do módulo</DialogDescription>
                       </DialogHeader>
-                      <div className="max-h-[75vh] overflow-y-auto px-1">
+                      <div className="max-h-[65vh] overflow-y-auto px-1">
                         <SectionForm
                           section={editingSection}
                           templates={templates}
@@ -928,11 +928,11 @@ function SectionForm({
 
       <div className="flex items-center space-x-2">
         <Switch
-          id="is_active"
+          id="is_active_section"
           checked={formData.is_active}
           onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
         />
-        <Label htmlFor="is_active">Seção ativa</Label>
+        <Label htmlFor="is_active_section">Seção ativa</Label>
       </div>
 
       <div className="flex items-center justify-end space-x-2 pt-4">
