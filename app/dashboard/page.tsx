@@ -11,13 +11,11 @@ import {
   BookOpen,
   TrendingUp,
   Calendar,
-  Award,
   Plus,
   ArrowRight,
   LogOut,
   Sparkles,
   CheckCircle,
-  Users,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslations, type Language, getTranslations } from "@/lib/i18n"
@@ -376,9 +374,8 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column - Now prioritizing modules */}
-          <div className="lg:col-span-2 space-y-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="space-y-8">
             {/* Next Actions - Transformation Modules */}
             <Card className="border-0 shadow-sm bg-gradient-to-br from-primary/5 to-accent/5">
               <CardHeader>
@@ -530,89 +527,6 @@ export default function DashboardPage() {
                     </Link>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-8">
-            {/* Quick Actions */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-xl">Ações Rápidas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Link href="/goals" className="block">
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
-                    <Target className="w-4 h-4 mr-3" />
-                    Gerenciar Metas
-                    <ArrowRight className="w-4 h-4 ml-auto" />
-                  </Button>
-                </Link>
-
-                <Link href="/analytics" className="block">
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
-                    <Calendar className="w-4 h-4 mr-3" />
-                    Reflexão Diária
-                    <ArrowRight className="w-4 h-4 ml-auto" />
-                  </Button>
-                </Link>
-
-                <Link href="/clientes" className="block">
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
-                    <Users className="w-4 h-4 mr-3" />
-                    Gerenciar Clientes
-                    <ArrowRight className="w-4 h-4 ml-auto" />
-                  </Button>
-                </Link>
-
-                <Link href="/habits" className="block">
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
-                    <TrendingUp className="w-4 h-4 mr-3" />
-                    Acompanhar Hábitos
-                    <ArrowRight className="w-4 h-4 ml-auto" />
-                  </Button>
-                </Link>
-
-                <Link href="/modules" className="block">
-                  <Button variant="outline" className="w-full justify-start bg-transparent">
-                    <BookOpen className="w-4 h-4 mr-3" />
-                    Estudar Módulos
-                    <ArrowRight className="w-4 h-4 ml-auto" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Achievements */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-xl">Conquistas Recentes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Award className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">Continue progredindo para desbloquear conquistas</p>
-                  <Link href="/achievements">
-                    <Button variant="outline" size="sm" className="bg-transparent">
-                      Ver Todas
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Motivation Card */}
-            <Card className="border-0 shadow-sm gradient-purple-light">
-              <CardContent className="p-6 text-center">
-                <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
-                <h3 className="font-semibold text-foreground mb-2">Continue Brilhando!</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Cada pequeno passo te aproxima da versão mais incrível de você mesma.
-                </p>
-                <Button size="sm" className="w-full">
-                  Continuar Jornada
-                </Button>
               </CardContent>
             </Card>
           </div>
