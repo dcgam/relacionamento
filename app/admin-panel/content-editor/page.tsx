@@ -110,24 +110,42 @@ export default function ContentEditorPage() {
     const supabase = createClient()
 
     try {
+      console.log("[v0] Loading modules and templates...")
+
       // Load modules
       const { data: modulesData, error: modulesError } = await supabase
         .from("transformation_modules")
         .select("*")
         .order("order_index", { ascending: true })
 
-      if (modulesError) throw modulesError
+      if (modulesError) {
+        console.error("[v0] Error loading modules:", modulesError)
+        throw modulesError
+      }
 
-      // Load templates
-      const { data: templatesData, error: templatesError } = await supabase
-        .from("content_templates")
-        .select("*")
-        .eq("is_active", true)
+      console.log("[v0] Loaded modules:", modulesData?.length || 0)
 
-      if (templatesError) throw templatesError
+      // Load templates - handle case where table might not exist yet
+      let templatesData = []
+      try {
+        const { data, error: templatesError } = await supabase
+          .from("content_templates")
+          .select("*")
+          .eq("is_active", true)
+
+        if (templatesError) {
+          console.warn("[v0] Content templates table not found, using empty array")
+        } else {
+          templatesData = data || []
+        }
+      } catch (error) {
+        console.warn("[v0] Content templates not available yet")
+      }
+
+      console.log("[v0] Loaded templates:", templatesData.length)
 
       setModules(modulesData || [])
-      setTemplates(templatesData || [])
+      setTemplates(templatesData)
     } catch (error) {
       console.error("[v0] Error loading data:", error)
     } finally {
@@ -139,24 +157,47 @@ export default function ContentEditorPage() {
     const supabase = createClient()
 
     try {
-      // Load sections
-      const { data: sectionsData, error: sectionsError } = await supabase
-        .from("module_sections")
-        .select("*")
-        .eq("module_id", moduleId)
-        .order("order_index", { ascending: true })
+      console.log("[v0] Loading details for module:", moduleId)
 
-      if (sectionsError) throw sectionsError
+      // Load sections - handle case where table might not exist yet
+      let sectionsData = []
+      try {
+        const { data, error: sectionsError } = await supabase
+          .from("module_sections")
+          .select("*")
+          .eq("module_id", moduleId)
+          .order("order_index", { ascending: true })
 
-      // Load configuration
-      const { data: configData, error: configError } = await supabase
-        .from("module_configurations")
-        .select("*")
-        .eq("module_id", moduleId)
-        .single()
+        if (sectionsError) {
+          console.warn("[v0] Module sections table not found")
+        } else {
+          sectionsData = data || []
+        }
+      } catch (error) {
+        console.warn("[v0] Module sections not available yet")
+      }
 
-      setSections(sectionsData || [])
-      setConfiguration(configData || null)
+      // Load configuration - handle case where table might not exist yet
+      let configData = null
+      try {
+        const { data, error: configError } = await supabase
+          .from("module_configurations")
+          .select("*")
+          .eq("module_id", moduleId)
+          .single()
+
+        if (configError && configError.code !== "PGRST116") {
+          console.warn("[v0] Module configurations table not found")
+        } else {
+          configData = data
+        }
+      } catch (error) {
+        console.warn("[v0] Module configurations not available yet")
+      }
+
+      console.log("[v0] Loaded sections:", sectionsData.length)
+      setSections(sectionsData)
+      setConfiguration(configData)
     } catch (error) {
       console.error("[v0] Error loading module details:", error)
     }
