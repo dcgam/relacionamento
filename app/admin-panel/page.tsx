@@ -58,17 +58,21 @@ export default function AdminPanelPage() {
     const supabase = createClient()
 
     try {
-      // Get total count
-      const { count } = await supabase.from("user_profiles").select("*", { count: "exact", head: true })
-      setTotalClients(count || 0)
+      console.log("[v0] Fetching clients from database...")
 
-      // Get paginated clients with progress data
-      const { data: profiles, error } = await supabase
-        .from("user_profiles")
+      // Get total count from users table (not user_profiles)
+      const { count } = await supabase.from("users").select("*", { count: "exact", head: true })
+      setTotalClients(count || 0)
+      console.log("[v0] Total clients found:", count)
+
+      // Get paginated clients with progress data from users table
+      const { data: users, error } = await supabase
+        .from("users")
         .select(`
           id,
           email,
           display_name,
+          phone,
           created_at,
           user_progress (
             progress_percentage
@@ -77,36 +81,44 @@ export default function AdminPanelPage() {
         .range((currentPage - 1) * CLIENTS_PER_PAGE, currentPage * CLIENTS_PER_PAGE - 1)
         .order("created_at", { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error("[v0] Database error:", error)
+        throw error
+      }
+
+      console.log("[v0] Users data received:", users)
 
       const clientsData =
-        profiles?.map((profile, index) => ({
-          id: profile.id,
-          email: profile.email || "",
-          display_name: profile.display_name || "Sem nome",
-          created_at: profile.created_at,
-          progress_percentage: profile.user_progress?.[0]?.progress_percentage || 0,
-          phone: "+55 (11) 99999-9999", // Placeholder - adicione campo phone na tabela se necessário
+        users?.map((user, index) => ({
+          id: user.id,
+          email: user.email || "",
+          display_name: user.display_name || "Sem nome",
+          created_at: user.created_at,
+          progress_percentage: user.user_progress?.[0]?.progress_percentage || 0,
+          phone: user.phone || "+55 (11) 99999-9999", // Use actual phone or placeholder
         })) || []
 
+      console.log("[v0] Processed clients data:", clientsData)
       setClients(clientsData)
     } catch (error) {
-      console.error("Erro ao buscar clientes:", error)
+      console.error("[v0] Erro ao buscar clientes:", error)
+      alert("Erro ao carregar clientes. Verifique o console para mais detalhes.")
     }
   }
 
   const exportClients = async () => {
+    console.log("[v0] Starting CSV export...")
     setExporting(true)
     const supabase = createClient()
 
     try {
-      // Get all clients for export
-      const { data: allProfiles, error } = await supabase
-        .from("user_profiles")
+      const { data: allUsers, error } = await supabase
+        .from("users")
         .select(`
           id,
           email,
           display_name,
+          phone,
           created_at,
           user_progress (
             progress_percentage
@@ -114,27 +126,36 @@ export default function AdminPanelPage() {
         `)
         .order("created_at", { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error("[v0] Export error:", error)
+        throw error
+      }
 
-      const exportData =
-        allProfiles?.map((profile, index) => ({
-          "Número de Inscrição": index + 1,
-          "Data de Inscrição": format(new Date(profile.created_at), "dd/MM/yyyy", { locale: ptBR }),
-          Nome: profile.display_name || "Sem nome",
-          Email: profile.email || "",
-          Telefone: "+55 (11) 99999-9999", // Placeholder
-          "Progressão (%)": profile.user_progress?.[0]?.progress_percentage || 0,
-        })) || []
+      console.log("[v0] Export data received:", allUsers)
 
-      // Convert to CSV
-      const headers = Object.keys(exportData[0] || {})
+      if (!allUsers || allUsers.length === 0) {
+        alert("Nenhum cliente encontrado para exportar.")
+        return
+      }
+
+      const exportData = allUsers.map((user, index) => ({
+        "Número de Inscrição": index + 1,
+        "Data de Inscrição": format(new Date(user.created_at), "dd/MM/yyyy", { locale: ptBR }),
+        Nome: user.display_name || "Sem nome",
+        Email: user.email || "",
+        Telefone: user.phone || "+55 (11) 99999-9999",
+        "Progressão (%)": user.user_progress?.[0]?.progress_percentage || 0,
+      }))
+
+      // Convert to CSV with proper encoding
+      const headers = Object.keys(exportData[0])
       const csvContent = [
         headers.join(","),
         ...exportData.map((row) => headers.map((header) => `"${row[header as keyof typeof row]}"`).join(",")),
       ].join("\n")
 
-      // Download CSV
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+      const BOM = "\uFEFF"
+      const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" })
       const link = document.createElement("a")
       const url = URL.createObjectURL(blob)
       link.setAttribute("href", url)
@@ -143,8 +164,13 @@ export default function AdminPanelPage() {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      console.log("[v0] CSV export completed successfully")
+      alert(`Exportação concluída! ${exportData.length} clientes exportados.`)
     } catch (error) {
-      console.error("Erro ao exportar clientes:", error)
+      console.error("[v0] Erro ao exportar clientes:", error)
+      alert("Erro ao exportar clientes. Verifique o console para mais detalhes.")
     } finally {
       setExporting(false)
     }

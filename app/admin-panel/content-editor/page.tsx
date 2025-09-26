@@ -395,19 +395,21 @@ export default function ContentEditorPage() {
                     Novo Módulo
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingModule ? "Editar Módulo" : "Criar Novo Módulo"}</DialogTitle>
                     <DialogDescription>Configure as informações básicas do módulo de transformação</DialogDescription>
                   </DialogHeader>
-                  <ModuleForm
-                    module={editingModule}
-                    onSave={saveModule}
-                    onCancel={() => {
-                      setShowModuleDialog(false)
-                      setEditingModule(null)
-                    }}
-                  />
+                  <div className="max-h-[70vh] overflow-y-auto px-1">
+                    <ModuleForm
+                      module={editingModule}
+                      onSave={saveModule}
+                      onCancel={() => {
+                        setShowModuleDialog(false)
+                        setEditingModule(null)
+                      }}
+                    />
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
@@ -509,20 +511,22 @@ export default function ContentEditorPage() {
                         Nova Seção
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>{editingSection ? "Editar Seção" : "Criar Nova Seção"}</DialogTitle>
                         <DialogDescription>Configure o conteúdo da seção do módulo</DialogDescription>
                       </DialogHeader>
-                      <SectionForm
-                        section={editingSection}
-                        templates={templates}
-                        onSave={saveSection}
-                        onCancel={() => {
-                          setShowSectionDialog(false)
-                          setEditingSection(null)
-                        }}
-                      />
+                      <div className="max-h-[75vh] overflow-y-auto px-1">
+                        <SectionForm
+                          section={editingSection}
+                          templates={templates}
+                          onSave={saveSection}
+                          onCancel={() => {
+                            setShowSectionDialog(false)
+                            setEditingSection(null)
+                          }}
+                        />
+                      </div>
                     </DialogContent>
                   </Dialog>
                 </div>
