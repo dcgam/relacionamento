@@ -88,6 +88,61 @@ interface ContentTemplate {
   is_active: boolean
 }
 
+const mockModules: TransformationModule[] = [
+  {
+    id: "1",
+    title: "Autoconhecimento Básico",
+    description: "Introdução ao processo de autoconhecimento e reflexão pessoal",
+    category: "personal",
+    estimated_duration_minutes: 20,
+    difficulty_level: "beginner",
+    content_type: "article",
+    content_url: "",
+    is_active: true,
+    order_index: 1,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "2",
+    title: "Gestão de Emoções",
+    description: "Aprenda a identificar e gerenciar suas emoções de forma saudável",
+    category: "personal",
+    estimated_duration_minutes: 25,
+    difficulty_level: "intermediate",
+    content_type: "exercise",
+    content_url: "",
+    is_active: true,
+    order_index: 2,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "3",
+    title: "Relacionamentos Saudáveis",
+    description: "Como construir e manter relacionamentos equilibrados",
+    category: "relationship",
+    estimated_duration_minutes: 30,
+    difficulty_level: "intermediate",
+    content_type: "article",
+    content_url: "",
+    is_active: true,
+    order_index: 3,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "4",
+    title: "Propósito de Vida",
+    description: "Descobrindo seu propósito e direção na vida",
+    category: "career",
+    estimated_duration_minutes: 35,
+    difficulty_level: "advanced",
+    content_type: "article",
+    content_url: "",
+    is_active: true,
+    order_index: 4,
+    created_at: new Date().toISOString(),
+  },
+]
+
 export default function ContentEditorPage() {
   const [modules, setModules] = useState<TransformationModule[]>([])
   const [selectedModule, setSelectedModule] = useState<TransformationModule | null>(null)
@@ -112,18 +167,23 @@ export default function ContentEditorPage() {
     try {
       console.log("[v0] Loading modules and templates...")
 
-      // Load modules
-      const { data: modulesData, error: modulesError } = await supabase
-        .from("transformation_modules")
-        .select("*")
-        .order("order_index", { ascending: true })
+      let modulesData = mockModules
 
-      if (modulesError) {
-        console.error("[v0] Error loading modules:", modulesError)
-        throw modulesError
+      try {
+        const { data: dbModules, error: modulesError } = await supabase
+          .from("transformation_modules")
+          .select("*")
+          .order("order_index", { ascending: true })
+
+        if (!modulesError && dbModules && dbModules.length > 0) {
+          modulesData = dbModules
+          console.log("[v0] Loaded modules from database:", modulesData.length)
+        } else {
+          console.log("[v0] Using mock data, database modules not available")
+        }
+      } catch (error) {
+        console.log("[v0] Database not available, using mock data")
       }
-
-      console.log("[v0] Loaded modules:", modulesData?.length || 0)
 
       // Load templates - handle case where table might not exist yet
       let templatesData = []
@@ -144,10 +204,12 @@ export default function ContentEditorPage() {
 
       console.log("[v0] Loaded templates:", templatesData.length)
 
-      setModules(modulesData || [])
+      setModules(modulesData)
       setTemplates(templatesData)
     } catch (error) {
       console.error("[v0] Error loading data:", error)
+      setModules(mockModules)
+      setTemplates([])
     } finally {
       setIsLoading(false)
     }
@@ -875,33 +937,55 @@ function SectionForm({
     is_active: section?.is_active ?? true,
   })
 
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("")
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSave(formData)
   }
 
-  const applyTemplate = (template: ContentTemplate) => {
-    setFormData({
-      ...formData,
-      content: template.content_template,
-      section_type: template.template_type as any,
-    })
+  const applyTemplate = (templateId: string) => {
+    const template = templates.find((t) => t.id === templateId)
+    if (template) {
+      setFormData({
+        ...formData,
+        content: template.content_template,
+      })
+    }
+  }
+
+  const getSectionTypeText = (type: string) => {
+    switch (type) {
+      case "text":
+        return "Texto"
+      case "video":
+        return "Vídeo"
+      case "exercise":
+        return "Exercício"
+      case "reflection":
+        return "Reflexão"
+      case "quiz":
+        return "Quiz"
+      default:
+        return type
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="title">Título da Seção</Label>
+          <Label htmlFor="section-title">Título da Seção</Label>
           <Input
-            id="title"
+            id="section-title"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            placeholder="Ex: Introdução ao Autoconhecimento"
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="section_type">Tipo de Seção</Label>
+          <Label htmlFor="section-type">Tipo de Seção</Label>
           <Select
             value={formData.section_type}
             onValueChange={(value: any) => setFormData({ ...formData, section_type: value })}
@@ -922,58 +1006,78 @@ function SectionForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="duration">Duração Estimada (min)</Label>
+          <Label htmlFor="section-duration">Duração Estimada (minutos)</Label>
           <Input
-            id="duration"
+            id="section-duration"
             type="number"
             value={formData.estimated_duration_minutes}
             onChange={(e) => setFormData({ ...formData, estimated_duration_minutes: Number.parseInt(e.target.value) })}
             min="1"
+            max="120"
           />
         </div>
         <div className="space-y-2">
-          <Label>Templates Disponíveis</Label>
-          <div className="flex flex-wrap gap-2">
-            {templates
-              .filter((t) => t.template_type === formData.section_type)
-              .map((template) => (
-                <Button
-                  key={template.id}
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => applyTemplate(template)}
-                >
-                  <Copy className="w-3 h-3 mr-1" />
-                  {template.name}
-                </Button>
-              ))}
+          <Label htmlFor="template-select">Aplicar Template (Opcional)</Label>
+          <div className="flex space-x-2">
+            <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+              <SelectTrigger>
+                <SelectValue placeholder="Escolher template..." />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => selectedTemplate && applyTemplate(selectedTemplate)}
+              disabled={!selectedTemplate}
+            >
+              Aplicar
+            </Button>
           </div>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="content">Conteúdo</Label>
+        <Label htmlFor="section-content">Conteúdo da Seção</Label>
+        <div className="text-sm text-muted-foreground mb-2">
+          Você pode usar Markdown para formatação. Suporte a **negrito**, *itálico*, listas, links, etc.
+        </div>
         <Textarea
-          id="content"
+          id="section-content"
           value={formData.content}
           onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+          placeholder="Digite o conteúdo da seção aqui...
+
+Exemplo de formatação Markdown:
+# Título Principal
+## Subtítulo
+
+**Texto em negrito** e *texto em itálico*
+
+- Item de lista 1
+- Item de lista 2
+
+[Link para recurso](https://exemplo.com)
+
+> Citação importante"
           rows={12}
-          placeholder="Digite o conteúdo da seção aqui..."
           className="font-mono text-sm"
         />
-        <p className="text-xs text-muted-foreground">
-          Você pode usar Markdown para formatação. Templates podem ser aplicados usando os botões acima.
-        </p>
       </div>
 
       <div className="flex items-center space-x-2">
         <Switch
-          id="is_active_section"
+          id="section-active"
           checked={formData.is_active}
           onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
         />
-        <Label htmlFor="is_active_section">Seção ativa</Label>
+        <Label htmlFor="section-active">Seção ativa</Label>
       </div>
 
       <div className="flex items-center justify-end space-x-2 pt-4">
