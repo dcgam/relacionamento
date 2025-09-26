@@ -38,6 +38,7 @@ import {
   Video,
   CheckSquare,
   MessageCircle,
+  ExternalLink,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -954,6 +955,29 @@ function SectionForm({
     }
   }
 
+  const insertVideoEmbed = () => {
+    const videoUrl = prompt("Cole a URL do vídeo (YouTube, Vimeo):")
+    if (videoUrl) {
+      const embedText = `\n\n## Vídeo\n\n${videoUrl}\n\n`
+      setFormData({
+        ...formData,
+        content: formData.content + embedText,
+      })
+    }
+  }
+
+  const insertLink = () => {
+    const linkText = prompt("Texto do link:")
+    const linkUrl = prompt("URL do link:")
+    if (linkText && linkUrl) {
+      const linkMarkdown = `[${linkText}](${linkUrl})`
+      setFormData({
+        ...formData,
+        content: formData.content + linkMarkdown,
+      })
+    }
+  }
+
   const getSectionTypeText = (type: string) => {
     switch (type) {
       case "text":
@@ -1043,10 +1067,42 @@ function SectionForm({
         </div>
       </div>
 
+      {/* Content Tools */}
+      <div className="space-y-2">
+        <Label>Ferramentas de Conteúdo</Label>
+        <div className="flex space-x-2">
+          <Button type="button" variant="outline" size="sm" onClick={insertVideoEmbed}>
+            <Video className="w-4 h-4 mr-2" />
+            Inserir Vídeo
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={insertLink}>
+            <ExternalLink className="w-4 h-4 mr-2" />
+            Inserir Link
+          </Button>
+        </div>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="section-content">Conteúdo da Seção</Label>
         <div className="text-sm text-muted-foreground mb-2">
-          Você pode usar Markdown para formatação. Suporte a **negrito**, *itálico*, listas, links, etc.
+          <strong>Suporte completo a:</strong>
+          <ul className="list-disc list-inside mt-1 space-y-1">
+            <li>
+              <strong>Texto formatado:</strong> Use **negrito**, *itálico*, # títulos
+            </li>
+            <li>
+              <strong>Vídeos:</strong> Cole URLs do YouTube ou Vimeo diretamente
+            </li>
+            <li>
+              <strong>Links:</strong> Use [texto](url) ou o botão "Inserir Link"
+            </li>
+            <li>
+              <strong>Listas:</strong> Use - para listas com marcadores
+            </li>
+            <li>
+              <strong>Citações:</strong> Use &gt; para citações importantes
+            </li>
+          </ul>
         </div>
         <Textarea
           id="section-content"
@@ -1054,7 +1110,8 @@ function SectionForm({
           onChange={(e) => setFormData({ ...formData, content: e.target.value })}
           placeholder="Digite o conteúdo da seção aqui...
 
-Exemplo de formatação Markdown:
+Exemplos de formatação:
+
 # Título Principal
 ## Subtítulo
 
@@ -1065,8 +1122,11 @@ Exemplo de formatação Markdown:
 
 [Link para recurso](https://exemplo.com)
 
-> Citação importante"
-          rows={12}
+Para vídeos, cole a URL diretamente:
+https://www.youtube.com/watch?v=VIDEO_ID
+
+&gt; Citação importante ou destaque"
+          rows={15}
           className="font-mono text-sm"
         />
       </div>
