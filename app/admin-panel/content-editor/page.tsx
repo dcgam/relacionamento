@@ -395,12 +395,12 @@ export default function ContentEditorPage() {
                     Novo Módulo
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
                   <DialogHeader>
                     <DialogTitle>{editingModule ? "Editar Módulo" : "Criar Novo Módulo"}</DialogTitle>
                     <DialogDescription>Configure as informações básicas do módulo de transformação</DialogDescription>
                   </DialogHeader>
-                  <div className="max-h-[65vh] overflow-y-auto px-1">
+                  <div className="max-h-[75vh] overflow-y-auto px-1">
                     <ModuleForm
                       module={editingModule}
                       onSave={saveModule}
@@ -511,12 +511,12 @@ export default function ContentEditorPage() {
                         Nova Seção
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden">
+                    <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden">
                       <DialogHeader>
                         <DialogTitle>{editingSection ? "Editar Seção" : "Criar Nova Seção"}</DialogTitle>
                         <DialogDescription>Configure o conteúdo da seção do módulo</DialogDescription>
                       </DialogHeader>
-                      <div className="max-h-[65vh] overflow-y-auto px-1">
+                      <div className="max-h-[80vh] overflow-y-auto px-1">
                         <SectionForm
                           section={editingSection}
                           templates={templates}

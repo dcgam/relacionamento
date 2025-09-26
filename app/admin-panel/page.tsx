@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Progress } from "@/components/ui/progress"
 import { ChevronLeft, ChevronRight, Download, Settings, Edit } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+
+import { createAdminClient } from "@/lib/supabase/admin-client"
 
 interface Client {
   id: string
@@ -55,7 +56,7 @@ export default function AdminPanelPage() {
   }, [router, currentPage])
 
   const fetchClients = async () => {
-    const supabase = createClient()
+    const supabase = createAdminClient()
 
     try {
       console.log("[v0] Fetching clients from database...")
@@ -109,7 +110,7 @@ export default function AdminPanelPage() {
   const exportClients = async () => {
     console.log("[v0] Starting CSV export...")
     setExporting(true)
-    const supabase = createClient()
+    const supabase = createAdminClient()
 
     try {
       const { data: allUserProfiles, error } = await supabase
