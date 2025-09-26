@@ -377,9 +377,115 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column */}
+          {/* Left Column - Now prioritizing modules */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Recent Goals */}
+            {/* Next Actions - Transformation Modules */}
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-primary/5 to-accent/5">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-2xl flex items-center gap-3">
+                      <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <BookOpen className="w-5 h-5 text-primary-foreground" />
+                      </div>
+                      Próximas Ações
+                    </CardTitle>
+                    <CardDescription className="text-base mt-2">
+                      Continue sua jornada de transformação pessoal
+                    </CardDescription>
+                  </div>
+                  <Link href="/modules">
+                    <Button variant="outline" size="sm">
+                      Ver Todos
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {recentModules.length > 0 ? (
+                  recentModules.map((module, index) => (
+                    <div key={module.id} className="group">
+                      <Link href={`/modules/${module.id}`} className="block">
+                        <div className="p-5 bg-card rounded-xl border border-border hover:border-primary/30 transition-all duration-200 hover:shadow-md">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-4">
+                              <div
+                                className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                                  module.status === "completed"
+                                    ? "bg-green-100 text-green-600"
+                                    : index === 0
+                                      ? "bg-primary text-primary-foreground"
+                                      : "bg-accent/10 text-accent"
+                                }`}
+                              >
+                                {module.status === "completed" ? (
+                                  <CheckCircle className="w-6 h-6" />
+                                ) : (
+                                  <BookOpen className="w-6 h-6" />
+                                )}
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">
+                                  {module.title}
+                                </h3>
+                                <div className="flex items-center gap-4 mt-1">
+                                  <p className="text-sm text-muted-foreground">
+                                    {module.progress_percentage}% concluído
+                                  </p>
+                                  {index === 0 && module.status !== "completed" && (
+                                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                                      Próximo
+                                    </Badge>
+                                  )}
+                                  {module.status === "completed" && (
+                                    <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
+                                      Concluído
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">Progresso</span>
+                              <span className="font-medium text-foreground">{module.progress_percentage}%</span>
+                            </div>
+                            <Progress value={module.progress_percentage} className="h-3" />
+                          </div>
+                          {index === 0 && module.status !== "completed" && (
+                            <div className="mt-4 pt-4 border-t border-border">
+                              <Button size="sm" className="w-full">
+                                <Sparkles className="w-4 h-4 mr-2" />
+                                Continuar Módulo
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <BookOpen className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="font-semibold text-lg text-foreground mb-2">Comece sua jornada</h3>
+                    <p className="text-muted-foreground mb-6">Explore nossos módulos de transformação pessoal</p>
+                    <Link href="/modules">
+                      <Button size="lg">
+                        <Sparkles className="w-5 h-5 mr-2" />
+                        Explorar Módulos
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Goals Section - Now secondary */}
             <Card className="border-0 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -387,7 +493,7 @@ export default function DashboardPage() {
                   <CardDescription>Acompanhe o progresso dos seus objetivos</CardDescription>
                 </div>
                 <Link href="/goals">
-                  <Button size="sm">
+                  <Button size="sm" variant="outline">
                     <Plus className="w-4 h-4 mr-2" />
                     Nova Meta
                   </Button>
@@ -420,44 +526,7 @@ export default function DashboardPage() {
                     <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground mb-4">Você ainda não tem metas definidas</p>
                     <Link href="/goals">
-                      <Button>Criar Primeira Meta</Button>
-                    </Link>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Learning Progress */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-xl">Módulos de Transformação</CardTitle>
-                <CardDescription>Continue sua jornada de aprendizado</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {recentModules.length > 0 ? (
-                  recentModules.map((module) => (
-                    <div key={module.id} className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center">
-                            <BookOpen className="w-4 h-4 text-accent" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-foreground">{module.title}</p>
-                            <p className="text-sm text-muted-foreground">{module.progress_percentage}% concluído</p>
-                          </div>
-                        </div>
-                        {module.status === "completed" && <CheckCircle className="w-5 h-5 text-green-600" />}
-                      </div>
-                      <Progress value={module.progress_percentage} className="h-2" />
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground mb-4">Comece sua jornada de aprendizado</p>
-                    <Link href="/modules">
-                      <Button>Explorar Módulos</Button>
+                      <Button variant="outline">Criar Primeira Meta</Button>
                     </Link>
                   </div>
                 )}
