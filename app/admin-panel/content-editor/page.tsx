@@ -947,137 +947,311 @@ function ModuleForm({
     order_index: module?.order_index || 1,
   })
 
+  const [sections, setSections] = useState<ModuleSection[]>([])
+  const [editingSection, setEditingSection] = useState<ModuleSection | null>(null)
+  const [showSectionForm, setShowSectionForm] = useState(false)
+
+  useEffect(() => {
+    if (module?.id) {
+      loadModuleSections(module.id)
+    }
+  }, [module])
+
+  const loadModuleSections = async (moduleId: string) => {
+    const supabase = createClient()
+    try {
+      const { data, error } = await supabase
+        .from("module_sections")
+        .select("*")
+        .eq("module_id", moduleId)
+        .order("order_index", { ascending: true })
+
+      if (!error && data) {
+        setSections(data)
+      }
+    } catch (error) {
+      console.warn("[v0] Could not load sections:", error)
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSave(formData)
   }
 
+  const addSection = () => {
+    setEditingSection(null)
+    setShowSectionForm(true)
+  }
+
+  const editSection = (section: ModuleSection) => {
+    setEditingSection(section)
+    setShowSectionForm(true)
+  }
+
+  const saveSection = async (sectionData: Partial<ModuleSection>) => {
+    const supabase = createClient()
+
+    try {
+      if (editingSection?.id) {
+        // Update existing section
+        const { error } = await supabase.from("module_sections").update(sectionData).eq("id", editingSection.id)
+
+        if (error) throw error
+      } else {
+        // Create new section
+        const { error } = await supabase.from("module_sections").insert({
+          ...sectionData,
+          module_id: module?.id || "temp",
+          order_index: sections.length + 1,
+        })
+
+        if (error) throw error
+      }
+
+      if (module?.id) {
+        await loadModuleSections(module.id)
+      }
+      setShowSectionForm(false)
+      setEditingSection(null)
+    } catch (error) {
+      console.error("[v0] Error saving section:", error)
+    }
+  }
+
+  const deleteSection = async (sectionId: string) => {
+    if (!confirm("Tem certeza que deseja deletar esta seção?")) return
+
+    const supabase = createClient()
+    try {
+      const { error } = await supabase.from("module_sections").delete().eq("id", sectionId)
+
+      if (error) throw error
+
+      if (module?.id) {
+        await loadModuleSections(module.id)
+      }
+    } catch (error) {
+      console.error("[v0] Error deleting section:", error)
+    }
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-6">
+      {/* Basic Module Information */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Título</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="category">Categoria</Label>
+            <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="relationship">Relacionamentos</SelectItem>
+                <SelectItem value="personal">Desenvolvimento Pessoal</SelectItem>
+                <SelectItem value="health">Saúde e Bem-estar</SelectItem>
+                <SelectItem value="career">Carreira e Propósito</SelectItem>
+                <SelectItem value="spiritual">Crescimento Espiritual</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         <div className="space-y-2">
-          <Label htmlFor="title">Título</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            required
+          <Label htmlFor="description">Descrição</Label>
+          <Textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="category">Categoria</Label>
-          <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="relationship">Relacionamentos</SelectItem>
-              <SelectItem value="personal">Desenvolvimento Pessoal</SelectItem>
-              <SelectItem value="health">Saúde e Bem-estar</SelectItem>
-              <SelectItem value="career">Carreira e Propósito</SelectItem>
-              <SelectItem value="spiritual">Crescimento Espiritual</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Descrição</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          rows={3}
-        />
-      </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="difficulty">Dificuldade</Label>
+            <Select
+              value={formData.difficulty_level}
+              onValueChange={(value: any) => setFormData({ ...formData, difficulty_level: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="beginner">Iniciante</SelectItem>
+                <SelectItem value="intermediate">Intermediário</SelectItem>
+                <SelectItem value="advanced">Avançado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="content_type">Tipo</Label>
+            <Select
+              value={formData.content_type}
+              onValueChange={(value: any) => setFormData({ ...formData, content_type: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="article">Artigo</SelectItem>
+                <SelectItem value="video">Vídeo</SelectItem>
+                <SelectItem value="exercise">Exercício</SelectItem>
+                <SelectItem value="meditation">Meditação</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="duration">Duração (min)</Label>
+            <Input
+              id="duration"
+              type="number"
+              value={formData.estimated_duration_minutes}
+              onChange={(e) =>
+                setFormData({ ...formData, estimated_duration_minutes: Number.parseInt(e.target.value) })
+              }
+              min="1"
+            />
+          </div>
+        </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="difficulty">Dificuldade</Label>
-          <Select
-            value={formData.difficulty_level}
-            onValueChange={(value: any) => setFormData({ ...formData, difficulty_level: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="beginner">Iniciante</SelectItem>
-              <SelectItem value="intermediate">Intermediário</SelectItem>
-              <SelectItem value="advanced">Avançado</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="content_url">URL do Conteúdo</Label>
+            <Input
+              id="content_url"
+              value={formData.content_url}
+              onChange={(e) => setFormData({ ...formData, content_url: e.target.value })}
+              placeholder="https://..."
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="order">Ordem</Label>
+            <Input
+              id="order"
+              type="number"
+              value={formData.order_index}
+              onChange={(e) => setFormData({ ...formData, order_index: Number.parseInt(e.target.value) })}
+              min="1"
+            />
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="content_type">Tipo</Label>
-          <Select
-            value={formData.content_type}
-            onValueChange={(value: any) => setFormData({ ...formData, content_type: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="article">Artigo</SelectItem>
-              <SelectItem value="video">Vídeo</SelectItem>
-              <SelectItem value="exercise">Exercício</SelectItem>
-              <SelectItem value="meditation">Meditação</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="duration">Duração (min)</Label>
-          <Input
-            id="duration"
-            type="number"
-            value={formData.estimated_duration_minutes}
-            onChange={(e) => setFormData({ ...formData, estimated_duration_minutes: Number.parseInt(e.target.value) })}
-            min="1"
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="is_active"
+            checked={formData.is_active}
+            onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
           />
+          <Label htmlFor="is_active">Módulo ativo</Label>
+        </div>
+
+        <div className="flex items-center justify-end space-x-2 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="submit">
+            <Save className="w-4 h-4 mr-2" />
+            Salvar Módulo
+          </Button>
+        </div>
+      </form>
+
+      {/* Content Sections Management */}
+      <div className="space-y-4 border-t pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Conteúdo do Módulo</h3>
+            <p className="text-sm text-muted-foreground">Gerencie as seções de conteúdo que os usuários verão</p>
+          </div>
+          <Button onClick={addSection} size="sm">
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Seção
+          </Button>
+        </div>
+
+        {/* Sections List */}
+        <div className="space-y-3">
+          {sections.map((section, index) => (
+            <Card key={section.id} className="border-l-4 border-l-primary">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Badge variant="outline" className="text-xs">
+                        {index + 1}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {section.section_type}
+                      </Badge>
+                      <span className="text-sm text-muted-foreground">{section.estimated_duration_minutes} min</span>
+                    </div>
+                    <h4 className="font-medium mb-1">{section.title}</h4>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{section.content.substring(0, 150)}...</p>
+                  </div>
+                  <div className="flex items-center space-x-1 ml-4">
+                    <Button variant="ghost" size="sm" onClick={() => editSection(section)}>
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => deleteSection(section.id)}>
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          {sections.length === 0 && (
+            <Card className="border-dashed border-2">
+              <CardContent className="p-8 text-center">
+                <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h4 className="font-medium mb-2">Nenhuma seção criada</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Adicione seções de conteúdo para que os usuários possam aprender
+                </p>
+                <Button onClick={addSection} size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Criar Primeira Seção
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="content_url">URL do Conteúdo</Label>
-          <Input
-            id="content_url"
-            value={formData.content_url}
-            onChange={(e) => setFormData({ ...formData, content_url: e.target.value })}
-            placeholder="https://..."
-          />
+      {/* Section Form Modal */}
+      {showSectionForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b">
+              <h3 className="text-lg font-semibold">{editingSection ? "Editar Seção" : "Nova Seção"}</h3>
+              <p className="text-sm text-muted-foreground">Configure o conteúdo que os usuários verão nesta seção</p>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <SectionContentForm
+                section={editingSection}
+                onSave={saveSection}
+                onCancel={() => {
+                  setShowSectionForm(false)
+                  setEditingSection(null)
+                }}
+              />
+            </div>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="order">Ordem</Label>
-          <Input
-            id="order"
-            type="number"
-            value={formData.order_index}
-            onChange={(e) => setFormData({ ...formData, order_index: Number.parseInt(e.target.value) })}
-            min="1"
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Switch
-          id="is_active"
-          checked={formData.is_active}
-          onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-        />
-        <Label htmlFor="is_active">Módulo ativo</Label>
-      </div>
-
-      <div className="flex items-center justify-end space-x-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancelar
-        </Button>
-        <Button type="submit">
-          <Save className="w-4 h-4 mr-2" />
-          Salvar
-        </Button>
-      </div>
-    </form>
+      )}
+    </div>
   )
 }
 
@@ -1304,6 +1478,305 @@ https://www.youtube.com/watch?v=VIDEO_ID
       </div>
 
       <div className="flex items-center justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit">
+          <Save className="w-4 h-4 mr-2" />
+          Salvar Seção
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+function SectionContentForm({
+  section,
+  onSave,
+  onCancel,
+}: {
+  section: ModuleSection | null
+  onSave: (data: Partial<ModuleSection>) => void
+  onCancel: () => void
+}) {
+  const [formData, setFormData] = useState({
+    title: section?.title || "",
+    content: section?.content || "",
+    section_type: section?.section_type || "text",
+    estimated_duration_minutes: section?.estimated_duration_minutes || 5,
+    is_active: section?.is_active ?? true,
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    onSave(formData)
+  }
+
+  const insertVideoEmbed = () => {
+    const videoUrl = prompt("Cole a URL do vídeo (YouTube, Vimeo):")
+    if (videoUrl) {
+      const embedText = `\n\n## 📹 Vídeo\n\n${videoUrl}\n\n`
+      setFormData({
+        ...formData,
+        content: formData.content + embedText,
+      })
+    }
+  }
+
+  const insertLink = () => {
+    const linkText = prompt("Texto do link:")
+    const linkUrl = prompt("URL do link:")
+    if (linkText && linkUrl) {
+      const linkMarkdown = `[${linkText}](${linkUrl})`
+      setFormData({
+        ...formData,
+        content: formData.content + linkMarkdown,
+      })
+    }
+  }
+
+  const insertTemplate = (templateType: string) => {
+    let template = ""
+
+    switch (templateType) {
+      case "introduction":
+        template = `# ${formData.title || "Título da Seção"}
+
+## Introdução
+
+Bem-vindo(a) a esta seção! Aqui você vai aprender sobre...
+
+## Objetivos
+
+Ao final desta seção, você será capaz de:
+- Objetivo 1
+- Objetivo 2
+- Objetivo 3
+
+## Conteúdo Principal
+
+*Desenvolva o conteúdo principal aqui*
+
+## Reflexão
+
+Pense sobre:
+- Como isso se aplica à sua vida?
+- Que mudanças você pode implementar?
+
+---
+*Tempo estimado: ${formData.estimated_duration_minutes} minutos*`
+        break
+
+      case "exercise":
+        template = `# ${formData.title || "Exercício Prático"}
+
+## Instruções
+
+1. Reserve um tempo tranquilo para este exercício
+2. Seja honesto(a) em suas respostas
+3. Não há respostas certas ou erradas
+4. Anote suas reflexões
+
+## Exercício
+
+*Descreva o exercício aqui*
+
+### Questões para Reflexão
+
+1. O que você descobriu sobre si mesmo?
+2. Que padrões você consegue identificar?
+3. Que ações você pode tomar?
+
+## Próximos Passos
+
+Com base nas suas descobertas:
+- Ação 1
+- Ação 2
+- Ação 3
+
+---
+*Tempo estimado: ${formData.estimated_duration_minutes} minutos*`
+        break
+
+      case "video":
+        template = `# ${formData.title || "Conteúdo em Vídeo"}
+
+## Antes de Assistir
+
+Prepare-se para:
+- Fazer anotações dos pontos principais
+- Pausar quando necessário para reflexão
+- Aplicar o que aprender
+
+## 📹 Vídeo Principal
+
+*Cole aqui a URL do vídeo do YouTube ou Vimeo*
+
+## Pontos Principais
+
+Enquanto assiste, anote:
+- Conceitos importantes
+- Técnicas apresentadas
+- Insights pessoais
+
+## Após o Vídeo
+
+Reflita sobre:
+- Quais pontos mais chamaram sua atenção?
+- Como você pode aplicar isso em sua vida?
+- Que mudanças você gostaria de implementar?
+
+---
+*Duração do vídeo: ${formData.estimated_duration_minutes} minutos*`
+        break
+    }
+
+    setFormData({ ...formData, content: template })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Section Basic Info */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="section-title">Título da Seção</Label>
+          <Input
+            id="section-title"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            placeholder="Ex: Introdução ao Autoconhecimento"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="section-type">Tipo de Seção</Label>
+          <Select
+            value={formData.section_type}
+            onValueChange={(value: any) => setFormData({ ...formData, section_type: value })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="text">📄 Texto</SelectItem>
+              <SelectItem value="video">📹 Vídeo</SelectItem>
+              <SelectItem value="exercise">🎯 Exercício</SelectItem>
+              <SelectItem value="reflection">💭 Reflexão</SelectItem>
+              <SelectItem value="quiz">✅ Quiz</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="section-duration">Duração Estimada (minutos)</Label>
+        <Input
+          id="section-duration"
+          type="number"
+          value={formData.estimated_duration_minutes}
+          onChange={(e) => setFormData({ ...formData, estimated_duration_minutes: Number.parseInt(e.target.value) })}
+          min="1"
+          max="120"
+          className="w-32"
+        />
+      </div>
+
+      {/* Content Tools */}
+      <div className="space-y-3">
+        <Label>Ferramentas de Conteúdo</Label>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => insertTemplate("introduction")}>
+            📝 Template Introdução
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => insertTemplate("exercise")}>
+            🎯 Template Exercício
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => insertTemplate("video")}>
+            📹 Template Vídeo
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={insertVideoEmbed}>
+            🎬 Inserir Vídeo
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={insertLink}>
+            🔗 Inserir Link
+          </Button>
+        </div>
+      </div>
+
+      {/* Content Editor */}
+      <div className="space-y-3">
+        <Label htmlFor="section-content">Conteúdo da Seção</Label>
+        <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+          <strong>💡 Dicas de Formatação:</strong>
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            <div>
+              <p>
+                <strong>Texto:</strong>
+              </p>
+              <ul className="text-xs space-y-1">
+                <li>**negrito** ou *itálico*</li>
+                <li># Título Grande</li>
+                <li>## Subtítulo</li>
+                <li>- Lista com marcadores</li>
+              </ul>
+            </div>
+            <div>
+              <p>
+                <strong>Mídia:</strong>
+              </p>
+              <ul className="text-xs space-y-1">
+                <li>Cole URLs do YouTube/Vimeo</li>
+                <li>[Texto do Link](URL)</li>
+                <li>&gt; Citação importante</li>
+                <li>--- para linha divisória</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <Textarea
+          id="section-content"
+          value={formData.content}
+          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+          placeholder="Digite o conteúdo da seção aqui...
+
+Exemplo de conteúdo rico:
+
+# Título Principal
+
+## Introdução
+Bem-vindo a esta seção sobre **desenvolvimento pessoal**.
+
+## Vídeo Explicativo
+https://www.youtube.com/watch?v=EXEMPLO
+
+## Exercício Prático
+1. Primeiro passo
+2. Segundo passo
+3. Terceiro passo
+
+### Recursos Adicionais
+- [Artigo interessante](https://exemplo.com)
+- [Ferramenta útil](https://ferramenta.com)
+
+> Lembre-se: o crescimento acontece fora da zona de conforto!
+
+---
+*Tempo estimado: 15 minutos*"
+          rows={20}
+          className="font-mono text-sm"
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="section-active"
+          checked={formData.is_active}
+          onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+        />
+        <Label htmlFor="section-active">Seção ativa</Label>
+      </div>
+
+      <div className="flex items-center justify-end space-x-2 pt-4 border-t">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
