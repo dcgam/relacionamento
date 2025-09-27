@@ -151,7 +151,7 @@ export default function ModuleDetailPage() {
     try {
       console.log("[v0] Loading module and sections for:", moduleId)
 
-      // Load module - try database first, fallback to mock data
+      // Load module from database first
       let moduleData = null
       let sectionsData = []
 
@@ -163,35 +163,46 @@ export default function ModuleDetailPage() {
           .eq("is_active", true)
           .single()
 
-        if (moduleError) {
-          console.log("[v0] Module not found in DB, using mock data")
-          // Find mock module
-          moduleData = mockTransformationModules.find((m) => m.id === moduleId)
-        } else {
+        if (!moduleError && dbModule) {
           moduleData = dbModule
-        }
+          console.log("[v0] Loaded module from database:", moduleData.title)
 
-        // Load sections from database
-        const { data: dbSections, error: sectionsError } = await supabase
-          .from("module_sections")
-          .select("*")
-          .eq("module_id", moduleId)
-          .eq("is_active", true)
-          .order("order_index", { ascending: true })
+          // Load sections from database
+          const { data: dbSections, error: sectionsError } = await supabase
+            .from("module_sections")
+            .select("*")
+            .eq("module_id", moduleId)
+            .eq("is_active", true)
+            .order("order_index", { ascending: true })
 
-        if (!sectionsError && dbSections) {
-          sectionsData = dbSections
-          console.log("[v0] Loaded sections from DB:", sectionsData.length)
+          if (!sectionsError && dbSections && dbSections.length > 0) {
+            sectionsData = dbSections
+            console.log("[v0] Loaded sections from database:", sectionsData.length)
+          } else {
+            console.log("[v0] No sections found, creating default section")
+            // Create a default section if none exists
+            const defaultSection = {
+              id: `default-${moduleId}`,
+              module_id: moduleId,
+              title: "Conteúdo Principal",
+              content: getDefaultContent(moduleData.content_type),
+              section_type: moduleData.content_type === "video" ? "video" : "text",
+              order_index: 1,
+              estimated_duration_minutes: moduleData.estimated_duration_minutes,
+              is_active: true,
+            }
+            sectionsData = [defaultSection]
+          }
         } else {
-          console.log("[v0] No sections found in DB, creating default content")
-          // Create default section from module description
+          console.log("[v0] Module not found in database, using mock data")
+          moduleData = mockTransformationModules.find((m) => m.id === moduleId)
           if (moduleData) {
             sectionsData = [
               {
-                id: "default-1",
+                id: `mock-${moduleId}`,
                 module_id: moduleId,
                 title: "Conteúdo Principal",
-                content: moduleData.description + "\n\n" + getDefaultContent(moduleData.content_type),
+                content: getDefaultContent(moduleData.content_type),
                 section_type: moduleData.content_type === "video" ? "video" : "text",
                 order_index: 1,
                 estimated_duration_minutes: moduleData.estimated_duration_minutes,
@@ -206,10 +217,10 @@ export default function ModuleDetailPage() {
         if (moduleData) {
           sectionsData = [
             {
-              id: "mock-1",
+              id: `mock-${moduleId}`,
               module_id: moduleId,
               title: "Conteúdo Principal",
-              content: moduleData.description + "\n\n" + getDefaultContent(moduleData.content_type),
+              content: getDefaultContent(moduleData.content_type),
               section_type: moduleData.content_type === "video" ? "video" : "text",
               order_index: 1,
               estimated_duration_minutes: moduleData.estimated_duration_minutes,

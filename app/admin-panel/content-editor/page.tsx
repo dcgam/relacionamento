@@ -168,7 +168,8 @@ export default function ContentEditorPage() {
     try {
       console.log("[v0] Loading modules and templates...")
 
-      let modulesData = mockModules
+      // Load modules from database first, then fallback to mock data
+      let modulesData = []
 
       try {
         const { data: dbModules, error: modulesError } = await supabase
@@ -180,13 +181,54 @@ export default function ContentEditorPage() {
           modulesData = dbModules
           console.log("[v0] Loaded modules from database:", modulesData.length)
         } else {
-          console.log("[v0] Using mock data, database modules not available")
+          console.log("[v0] No modules in database, creating from mock data")
+          // Insert mock modules into database for admin editing
+          for (const mockModule of mockModules) {
+            const { error: insertError } = await supabase
+              .from("transformation_modules")
+              .insert({
+                id: mockModule.id,
+                title: mockModule.title,
+                description: mockModule.description,
+                category: mockModule.category,
+                estimated_duration_minutes: mockModule.estimated_duration_minutes,
+                difficulty_level: mockModule.difficulty_level,
+                content_type: mockModule.content_type,
+                content_url: mockModule.content_url,
+                is_active: mockModule.is_active,
+                order_index: mockModule.order_index,
+              })
+              .select()
+              .single()
+
+            if (!insertError) {
+              // Create default section for each module
+              await supabase.from("module_sections").insert({
+                module_id: mockModule.id,
+                title: "Conteúdo Principal",
+                content: getDefaultSectionContent(mockModule),
+                section_type: mockModule.content_type === "video" ? "video" : "text",
+                order_index: 1,
+                estimated_duration_minutes: mockModule.estimated_duration_minutes,
+                is_active: true,
+              })
+            }
+          }
+
+          // Reload after inserting
+          const { data: newDbModules } = await supabase
+            .from("transformation_modules")
+            .select("*")
+            .order("order_index", { ascending: true })
+
+          modulesData = newDbModules || mockModules
         }
       } catch (error) {
         console.log("[v0] Database not available, using mock data")
+        modulesData = mockModules
       }
 
-      // Load templates - handle case where table might not exist yet
+      // Load templates
       let templatesData = []
       try {
         const { data, error: templatesError } = await supabase
@@ -194,10 +236,8 @@ export default function ContentEditorPage() {
           .select("*")
           .eq("is_active", true)
 
-        if (templatesError) {
-          console.warn("[v0] Content templates table not found, using empty array")
-        } else {
-          templatesData = data || []
+        if (!templatesError && data) {
+          templatesData = data
         }
       } catch (error) {
         console.warn("[v0] Content templates not available yet")
@@ -435,6 +475,129 @@ export default function ContentEditorPage() {
         return "Crescimento Espiritual"
       default:
         return category
+    }
+  }
+
+  const getDefaultSectionContent = (module: TransformationModule) => {
+    const baseContent = `# ${module.title}
+
+${module.description}
+
+## Objetivos deste módulo
+
+Ao completar este módulo, você será capaz de:
+- Compreender os conceitos fundamentais
+- Aplicar as técnicas na prática
+- Desenvolver novas habilidades
+- Refletir sobre seu crescimento pessoal
+
+## Conteúdo Principal
+
+`
+
+    switch (module.content_type) {
+      case "video":
+        return (
+          baseContent +
+          `
+### Assista ao vídeo
+
+*Cole aqui a URL do vídeo do YouTube ou Vimeo*
+
+**Instruções:**
+1. Assista ao vídeo com atenção
+2. Faça anotações dos pontos principais
+3. Pratique os exercícios sugeridos
+
+### Reflexão
+
+Após assistir ao vídeo, reflita sobre:
+- Quais pontos mais chamaram sua atenção?
+- Como você pode aplicar isso em sua vida?
+- Que mudanças você gostaria de implementar?
+
+*Tempo estimado: ${module.estimated_duration_minutes} minutos*`
+        )
+
+      case "exercise":
+        return (
+          baseContent +
+          `
+### Exercício Prático
+
+**Instruções:**
+1. Reserve um tempo tranquilo para este exercício
+2. Seja honesto(a) em suas respostas
+3. Não há respostas certas ou erradas
+4. Anote suas reflexões no final
+
+**Exercício:**
+
+*Descreva aqui o exercício específico*
+
+### Questões para Reflexão
+
+1. O que você descobriu sobre si mesmo?
+2. Que padrões você consegue identificar?
+3. Que ações você pode tomar a partir dessas descobertas?
+
+*Tempo estimado: ${module.estimated_duration_minutes} minutos*`
+        )
+
+      case "meditation":
+        return (
+          baseContent +
+          `
+### Prática de Meditação
+
+**Preparação:**
+1. Encontre um local silencioso e confortável
+2. Sente-se com a coluna ereta
+3. Respire profundamente algumas vezes
+4. Feche os olhos suavemente
+
+**Prática Guiada:**
+
+*Descreva aqui a prática de meditação específica*
+
+### Após a Prática
+
+Reserve alguns minutos para:
+- Observar como você se sente
+- Anotar qualquer insight ou sensação
+- Agradecer por este momento de cuidado consigo
+
+*Duração: ${module.estimated_duration_minutes} minutos*`
+        )
+
+      default:
+        return (
+          baseContent +
+          `
+### Conceitos Fundamentais
+
+*Desenvolva aqui o conteúdo principal do módulo*
+
+### Técnicas Práticas
+
+*Descreva técnicas que o usuário pode aplicar*
+
+### Exercícios de Aplicação
+
+*Inclua exercícios práticos relacionados ao tema*
+
+### Para Saber Mais
+
+*Adicione recursos adicionais, links úteis ou leituras complementares*
+
+[Link para recurso adicional](https://exemplo.com)
+
+### Reflexão Final
+
+*Inclua questões para reflexão e autoavaliação*
+
+*Tempo estimado de leitura: ${module.estimated_duration_minutes} minutos*`
+        )
     }
   }
 
