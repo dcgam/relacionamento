@@ -662,7 +662,7 @@ Reserve alguns minutos para:
                     Novo Módulo
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
+                <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]">
                   <DialogHeader>
                     <DialogTitle>{editingModule ? "Editar Módulo" : "Criar Novo Módulo"}</DialogTitle>
                     <DialogDescription>Configure as informações básicas do módulo de transformação</DialogDescription>

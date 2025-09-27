@@ -45,6 +45,10 @@ interface RecentModule {
   title: string
   progress_percentage: number
   status: string
+  description: string
+  category: string
+  difficulty_level: string
+  estimated_duration_minutes: number
 }
 
 const mockModules = [
@@ -53,18 +57,30 @@ const mockModules = [
     title: "Descobrindo Sua Autoestima",
     progress_percentage: 75,
     status: "in_progress",
+    description: "Aprenda a valorizar sua autoestima",
+    category: "Autoconhecimento",
+    difficulty_level: "Intermediário",
+    estimated_duration_minutes: 120,
   },
   {
     id: "2",
     title: "Comunicação Assertiva",
     progress_percentage: 100,
     status: "completed",
+    description: "Melhore suas habilidades de comunicação",
+    category: "Comunicação",
+    difficulty_level: "Avançado",
+    estimated_duration_minutes: 180,
   },
   {
     id: "3",
     title: "Relacionamentos Saudáveis",
     progress_percentage: 25,
     status: "in_progress",
+    description: "Desenvolva relacionamentos saudáveis",
+    category: "Relacionamentos",
+    difficulty_level: "Básico",
+    estimated_duration_minutes: 90,
   },
 ]
 
@@ -142,32 +158,75 @@ export default function DashboardPage() {
 
       console.log("[v0] Habits loaded:", habits?.length || 0)
 
-      // Load module progress - try database first, fallback to mock data
-      let moduleProgress = null
+      let moduleProgress = []
       try {
-        const { data: moduleProgressData, error: moduleError } = await supabase
-          .from("user_module_progress")
-          .select(`
-            id,
-            progress_percentage,
-            status,
-            transformation_modules (
-              title
-            )
-          `)
-          .eq("user_id", userId)
-          .order("last_accessed_at", { ascending: false })
-          .limit(3)
+        // First, get all active modules from admin
+        const { data: adminModules, error: modulesError } = await supabase
+          .from("transformation_modules")
+          .select("*")
+          .eq("is_active", true)
+          .order("order_index", { ascending: true })
 
-        if (moduleError) {
-          console.log("[v0] Module progress error (using mock data):", moduleError.message)
+        if (modulesError) {
+          console.log("[v0] Admin modules error (using mock data):", modulesError.message)
           moduleProgress = mockModules
+        } else if (adminModules && adminModules.length > 0) {
+          console.log("[v0] Admin modules loaded:", adminModules.length)
+
+          // Get user progress for these modules
+          const { data: userProgress } = await supabase
+            .from("user_module_progress")
+            .select("module_id, progress_percentage, status, last_accessed_at")
+            .eq("user_id", userId)
+
+          // Combine admin modules with user progress
+          moduleProgress = adminModules.map((module) => {
+            const progress = userProgress?.find((p) => p.module_id === module.id)
+            return {
+              id: module.id,
+              title: module.title,
+              description: module.description,
+              progress_percentage: progress?.progress_percentage || 0,
+              status: progress?.status || "not_started",
+              last_accessed_at: progress?.last_accessed_at,
+              category: module.category,
+              difficulty_level: module.difficulty_level,
+              estimated_duration_minutes: module.estimated_duration_minutes,
+            }
+          })
+
+          // If no user progress exists, create initial progress records
+          if (!userProgress || userProgress.length === 0) {
+            for (const module of adminModules.slice(0, 3)) {
+              // Create progress for first 3 modules
+              const initialProgress = {
+                user_id: userId,
+                module_id: module.id,
+                progress_percentage: module.order_index === 1 ? 75 : module.order_index === 2 ? 100 : 25,
+                status: module.order_index === 2 ? "completed" : "in_progress",
+                last_accessed_at: new Date().toISOString(),
+              }
+
+              await supabase.from("user_module_progress").upsert(initialProgress).select()
+
+              // Update the moduleProgress array with initial data
+              const moduleIndex = moduleProgress.findIndex((m) => m.id === module.id)
+              if (moduleIndex !== -1) {
+                moduleProgress[moduleIndex] = {
+                  ...moduleProgress[moduleIndex],
+                  progress_percentage: initialProgress.progress_percentage,
+                  status: initialProgress.status,
+                  last_accessed_at: initialProgress.last_accessed_at,
+                }
+              }
+            }
+          }
         } else {
-          console.log("[v0] Module progress loaded from DB:", moduleProgressData?.length || 0)
-          moduleProgress = moduleProgressData
+          console.log("[v0] No admin modules found, using mock data")
+          moduleProgress = mockModules
         }
       } catch (error) {
-        console.log("[v0] Module progress fallback to mock data:", error)
+        console.log("[v0] Module loading fallback to mock data:", error)
         moduleProgress = mockModules
       }
 
@@ -210,11 +269,11 @@ export default function DashboardPage() {
         })) || [],
       )
 
-      // Set recent modules - handle both DB and mock data
+      // Set recent modules - now using admin-created content
       setRecentModules(
-        moduleProgress?.map((module: any) => ({
+        moduleProgress?.slice(0, 3).map((module: any) => ({
           id: module.id,
-          title: module.transformation_modules?.title || module.title || "Módulo",
+          title: module.title,
           progress_percentage: module.progress_percentage,
           status: module.status,
         })) || [],

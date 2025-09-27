@@ -51,11 +51,10 @@ interface ModuleSection {
 const mockTransformationModules = [
   {
     id: "1",
-    title: "Descobrindo Sua Autoestima",
-    description:
-      "Aprenda a reconhecer e valorizar suas qualidades únicas. Este módulo te guiará através de exercícios práticos para desenvolver uma autoestima saudável.",
-    category: "self_esteem",
-    estimated_duration_minutes: 45,
+    title: "Autoconhecimento Básico",
+    description: "Introdução ao processo de autoconhecimento e reflexão pessoal",
+    category: "personal",
+    estimated_duration_minutes: 20,
     difficulty_level: "beginner" as const,
     content_type: "article" as const,
     content_url: "",
@@ -65,13 +64,12 @@ const mockTransformationModules = [
   },
   {
     id: "2",
-    title: "Comunicação Assertiva",
-    description:
-      "Desenvolva habilidades para se expressar com clareza e confiança. Aprenda técnicas de comunicação que fortalecem seus relacionamentos.",
-    category: "communication",
-    estimated_duration_minutes: 60,
+    title: "Gestão de Emoções",
+    description: "Aprenda a identificar e gerenciar suas emoções de forma saudável",
+    category: "personal",
+    estimated_duration_minutes: 25,
     difficulty_level: "intermediate" as const,
-    content_type: "video" as const,
+    content_type: "exercise" as const,
     content_url: "",
     is_active: true,
     order_index: 2,
@@ -80,12 +78,11 @@ const mockTransformationModules = [
   {
     id: "3",
     title: "Relacionamentos Saudáveis",
-    description:
-      "Construa conexões mais profundas e significativas. Descubra como criar e manter relacionamentos que nutrem seu crescimento pessoal.",
-    category: "relationships",
-    estimated_duration_minutes: 50,
+    description: "Como construir e manter relacionamentos equilibrados",
+    category: "relationship",
+    estimated_duration_minutes: 30,
     difficulty_level: "intermediate" as const,
-    content_type: "exercise" as const,
+    content_type: "article" as const,
     content_url: "",
     is_active: true,
     order_index: 3,
@@ -93,30 +90,15 @@ const mockTransformationModules = [
   },
   {
     id: "4",
-    title: "Inteligência Emocional",
-    description:
-      "Compreenda e gerencie suas emoções de forma eficaz. Desenvolva a capacidade de reconhecer e regular suas emoções e as dos outros.",
-    category: "emotional_intelligence",
-    estimated_duration_minutes: 40,
+    title: "Propósito de Vida",
+    description: "Descobrindo seu propósito e direção na vida",
+    category: "career",
+    estimated_duration_minutes: 35,
     difficulty_level: "advanced" as const,
     content_type: "article" as const,
     content_url: "",
     is_active: true,
     order_index: 4,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "5",
-    title: "Mindfulness Diário",
-    description:
-      "Pratique a atenção plena para reduzir o estresse. Incorpore técnicas de mindfulness em sua rotina diária para maior bem-estar.",
-    category: "mindfulness",
-    estimated_duration_minutes: 30,
-    difficulty_level: "beginner" as const,
-    content_type: "meditation" as const,
-    content_url: "",
-    is_active: true,
-    order_index: 5,
     created_at: new Date().toISOString(),
   },
 ]
@@ -151,11 +133,11 @@ export default function ModuleDetailPage() {
     try {
       console.log("[v0] Loading module and sections for:", moduleId)
 
-      // Load module from database first
       let moduleData = null
       let sectionsData = []
 
       try {
+        // Load module from admin database
         const { data: dbModule, error: moduleError } = await supabase
           .from("transformation_modules")
           .select("*")
@@ -165,9 +147,9 @@ export default function ModuleDetailPage() {
 
         if (!moduleError && dbModule) {
           moduleData = dbModule
-          console.log("[v0] Loaded module from database:", moduleData.title)
+          console.log("[v0] Loaded module from admin database:", moduleData.title)
 
-          // Load sections from database
+          // Load admin-created sections
           const { data: dbSections, error: sectionsError } = await supabase
             .from("module_sections")
             .select("*")
@@ -177,15 +159,15 @@ export default function ModuleDetailPage() {
 
           if (!sectionsError && dbSections && dbSections.length > 0) {
             sectionsData = dbSections
-            console.log("[v0] Loaded sections from database:", sectionsData.length)
+            console.log("[v0] Loaded admin-created sections:", sectionsData.length)
           } else {
-            console.log("[v0] No sections found, creating default section")
-            // Create a default section if none exists
+            console.log("[v0] No admin sections found, creating default section")
+            // Create a default section based on admin module data
             const defaultSection = {
               id: `default-${moduleId}`,
               module_id: moduleId,
               title: "Conteúdo Principal",
-              content: getDefaultContent(moduleData.content_type),
+              content: getDefaultSectionContent(moduleData),
               section_type: moduleData.content_type === "video" ? "video" : "text",
               order_index: 1,
               estimated_duration_minutes: moduleData.estimated_duration_minutes,
@@ -194,7 +176,7 @@ export default function ModuleDetailPage() {
             sectionsData = [defaultSection]
           }
         } else {
-          console.log("[v0] Module not found in database, using mock data")
+          console.log("[v0] Module not found in admin database, using mock data")
           moduleData = mockTransformationModules.find((m) => m.id === moduleId)
           if (moduleData) {
             sectionsData = [
@@ -202,7 +184,7 @@ export default function ModuleDetailPage() {
                 id: `mock-${moduleId}`,
                 module_id: moduleId,
                 title: "Conteúdo Principal",
-                content: getDefaultContent(moduleData.content_type),
+                content: getDefaultSectionContent(moduleData),
                 section_type: moduleData.content_type === "video" ? "video" : "text",
                 order_index: 1,
                 estimated_duration_minutes: moduleData.estimated_duration_minutes,
@@ -220,7 +202,7 @@ export default function ModuleDetailPage() {
               id: `mock-${moduleId}`,
               module_id: moduleId,
               title: "Conteúdo Principal",
-              content: getDefaultContent(moduleData.content_type),
+              content: getDefaultSectionContent(moduleData),
               section_type: moduleData.content_type === "video" ? "video" : "text",
               order_index: 1,
               estimated_duration_minutes: moduleData.estimated_duration_minutes,
@@ -274,63 +256,126 @@ export default function ModuleDetailPage() {
     }
   }
 
-  const getDefaultContent = (contentType: string) => {
-    switch (contentType) {
-      case "video":
-        return `## Assista ao Vídeo
+  const getDefaultSectionContent = (module: TransformationModule) => {
+    const baseContent = `# ${module.title}
 
-Este módulo contém conteúdo em vídeo para seu aprendizado.
+${module.description}
+
+## Objetivos deste módulo
+
+Ao completar este módulo, você será capaz de:
+- Compreender os conceitos fundamentais
+- Aplicar as técnicas na prática
+- Desenvolver novas habilidades
+- Refletir sobre seu crescimento pessoal
+
+## Conteúdo Principal
+
+`
+
+    switch (module.content_type) {
+      case "video":
+        return (
+          baseContent +
+          `
+### Assista ao vídeo
+
+*Cole aqui a URL do vídeo do YouTube ou Vimeo*
 
 **Instruções:**
 1. Assista ao vídeo com atenção
 2. Faça anotações dos pontos principais
 3. Pratique os exercícios sugeridos
 
-*Tempo estimado: ${module?.estimated_duration_minutes || 20} minutos*`
+### Reflexão
+
+Após assistir ao vídeo, reflita sobre:
+- Quais pontos mais chamaram sua atenção?
+- Como você pode aplicar isso em sua vida?
+- Que mudanças você gostaria de implementar?
+
+*Tempo estimado: ${module.estimated_duration_minutes} minutos*`
+        )
 
       case "exercise":
-        return `## Exercício Prático
+        return (
+          baseContent +
+          `
+### Exercício Prático
 
-Este módulo contém exercícios práticos para aplicar o conhecimento.
+**Instruções:**
+1. Reserve um tempo tranquilo para este exercício
+2. Seja honesto(a) em suas respostas
+3. Não há respostas certas ou erradas
+4. Anote suas reflexões no final
 
-**Como fazer:**
-1. Leia as instruções cuidadosamente
-2. Reserve um tempo tranquilo para o exercício
-3. Seja honesto(a) em suas respostas
-4. Anote suas reflexões
+**Exercício:**
 
-*Tempo estimado: ${module?.estimated_duration_minutes || 20} minutos*`
+*Descreva aqui o exercício específico*
+
+### Questões para Reflexão
+
+1. O que você descobriu sobre si mesmo?
+2. Que padrões você consegue identificar?
+3. Que ações você pode tomar a partir dessas descobertas?
+
+*Tempo estimado: ${module.estimated_duration_minutes} minutos*`
+        )
 
       case "meditation":
-        return `## Prática de Meditação
-
-Este módulo oferece uma prática guiada de meditação.
+        return (
+          baseContent +
+          `
+### Prática de Meditação
 
 **Preparação:**
-1. Encontre um local silencioso
-2. Sente-se confortavelmente
+1. Encontre um local silencioso e confortável
+2. Sente-se com a coluna ereta
 3. Respire profundamente algumas vezes
-4. Siga as instruções da prática
+4. Feche os olhos suavemente
 
-*Duração: ${module?.estimated_duration_minutes || 20} minutos*`
+**Prática Guiada:**
+
+*Descreva aqui a prática de meditação específica*
+
+### Após a Prática
+
+Reserve alguns minutos para:
+- Observar como você se sente
+- Anotar qualquer insight ou sensação
+- Agradecer por este momento de cuidado consigo
+
+*Duração: ${module.estimated_duration_minutes} minutos*`
+        )
 
       default:
-        return `## Conteúdo do Módulo
+        return (
+          baseContent +
+          `
+### Conceitos Fundamentais
 
-Bem-vindo(a) a este módulo de transformação pessoal.
+*Desenvolva aqui o conteúdo principal do módulo*
 
-**O que você vai aprender:**
-- Conceitos fundamentais sobre o tema
-- Técnicas práticas para aplicar no dia a dia
-- Exercícios de reflexão e autoconhecimento
+### Técnicas Práticas
 
-**Como aproveitar melhor:**
-1. Leia com atenção todo o conteúdo
-2. Faça as anotações que julgar importantes
-3. Pratique os exercícios sugeridos
-4. Reflita sobre como aplicar em sua vida
+*Descreva técnicas que o usuário pode aplicar*
 
-*Tempo estimado de leitura: ${module?.estimated_duration_minutes || 20} minutos*`
+### Exercícios de Aplicação
+
+*Inclua exercícios práticos relacionados ao tema*
+
+### Para Saber Mais
+
+*Adicione recursos adicionais, links úteis ou leituras complementares*
+
+[Link para recurso adicional](https://exemplo.com)
+
+### Reflexão Final
+
+*Inclua questões para reflexão e autoavaliação*
+
+*Tempo estimado de leitura: ${module.estimated_duration_minutes} minutos*`
+        )
     }
   }
 
@@ -467,18 +512,16 @@ Bem-vindo(a) a este módulo de transformação pessoal.
 
   const getCategoryText = (category: string) => {
     switch (category) {
-      case "self_esteem":
-        return "Autoestima"
-      case "relationships":
+      case "relationship":
         return "Relacionamentos"
-      case "communication":
-        return "Comunicação"
-      case "emotional_intelligence":
-        return "Inteligência Emocional"
-      case "personal_growth":
-        return "Crescimento Pessoal"
-      case "mindfulness":
-        return "Mindfulness"
+      case "personal":
+        return "Desenvolvimento Pessoal"
+      case "health":
+        return "Saúde e Bem-estar"
+      case "career":
+        return "Carreira e Propósito"
+      case "spiritual":
+        return "Crescimento Espiritual"
       default:
         return category
     }
