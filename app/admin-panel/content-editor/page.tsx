@@ -662,12 +662,14 @@ Reserve alguns minutos para:
                     Novo Módulo
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[95vh] overflow-hidden fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%]">
+                <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden fixed top-[2.5%] left-[50%] translate-x-[-50%] translate-y-0">
                   <DialogHeader>
                     <DialogTitle>{editingModule ? "Editar Módulo" : "Criar Novo Módulo"}</DialogTitle>
-                    <DialogDescription>Configure as informações básicas do módulo de transformação</DialogDescription>
+                    <DialogDescription>
+                      Configure as informações e conteúdo completo do módulo de transformação
+                    </DialogDescription>
                   </DialogHeader>
-                  <div className="max-h-[75vh] overflow-y-auto px-1">
+                  <div className="max-h-[85vh] overflow-y-auto px-1">
                     <ModuleForm
                       module={editingModule}
                       onSave={saveModule}
