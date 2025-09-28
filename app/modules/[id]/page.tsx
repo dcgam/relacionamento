@@ -137,7 +137,6 @@ export default function ModuleDetailPage() {
       let sectionsData = []
 
       try {
-        // Load module from admin database
         const { data: dbModule, error: moduleError } = await supabase
           .from("transformation_modules")
           .select("*")
@@ -149,7 +148,6 @@ export default function ModuleDetailPage() {
           moduleData = dbModule
           console.log("[v0] Loaded module from admin database:", moduleData.title)
 
-          // Load admin-created sections
           const { data: dbSections, error: sectionsError } = await supabase
             .from("module_sections")
             .select("*")
@@ -161,22 +159,11 @@ export default function ModuleDetailPage() {
             sectionsData = dbSections
             console.log("[v0] Loaded admin-created sections:", sectionsData.length)
           } else {
-            console.log("[v0] No admin sections found, creating default section")
-            // Create a default section based on admin module data
-            const defaultSection = {
-              id: `default-${moduleId}`,
-              module_id: moduleId,
-              title: "Conteúdo Principal",
-              content: getDefaultSectionContent(moduleData),
-              section_type: moduleData.content_type === "video" ? "video" : "text",
-              order_index: 1,
-              estimated_duration_minutes: moduleData.estimated_duration_minutes,
-              is_active: true,
-            }
-            sectionsData = [defaultSection]
+            console.log("[v0] No admin sections found for module:", moduleId)
+            sectionsData = []
           }
         } else {
-          console.log("[v0] Module not found in admin database, using mock data")
+          console.log("[v0] Module not found in admin database, trying mock data")
           moduleData = mockTransformationModules.find((m) => m.id === moduleId)
           if (moduleData) {
             sectionsData = [
@@ -184,8 +171,8 @@ export default function ModuleDetailPage() {
                 id: `mock-${moduleId}`,
                 module_id: moduleId,
                 title: "Conteúdo Principal",
-                content: getDefaultSectionContent(moduleData),
-                section_type: moduleData.content_type === "video" ? "video" : "text",
+                content: `# ${moduleData.title}\n\n${moduleData.description}\n\n**Este módulo precisa ser configurado no painel administrativo.**\n\nPara adicionar conteúdo:\n1. Acesse o painel administrativo\n2. Vá para Editor de Conteúdo\n3. Edite este módulo\n4. Adicione seções com texto, vídeos e links\n\nApós a configuração, o conteúdo aparecerá aqui automaticamente.`,
+                section_type: "text" as const,
                 order_index: 1,
                 estimated_duration_minutes: moduleData.estimated_duration_minutes,
                 is_active: true,
@@ -202,8 +189,8 @@ export default function ModuleDetailPage() {
               id: `mock-${moduleId}`,
               module_id: moduleId,
               title: "Conteúdo Principal",
-              content: getDefaultSectionContent(moduleData),
-              section_type: moduleData.content_type === "video" ? "video" : "text",
+              content: `# ${moduleData.title}\n\n${moduleData.description}\n\n**Erro de conexão com o banco de dados.**\n\nEste conteúdo é temporário. Para ver o conteúdo real:\n1. Verifique a conexão com o banco\n2. Configure o conteúdo no painel administrativo`,
+              section_type: "text" as const,
               order_index: 1,
               estimated_duration_minutes: moduleData.estimated_duration_minutes,
               is_active: true,
@@ -595,31 +582,30 @@ Reserve alguns minutos para:
   const renderSectionContent = (section: ModuleSection) => {
     const content = section.content
 
-    // Check if content contains video embed (YouTube, Vimeo, etc.)
     const videoRegex =
       /(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|vimeo\.com\/|player\.vimeo\.com\/video\/)([a-zA-Z0-9_-]+)/g
-    const videoMatch = content.match(videoRegex)
+    const videoMatches = [...content.matchAll(videoRegex)]
 
-    // Check if content contains links
     const linkRegex = /\[([^\]]+)\]$$([^)]+)$$/g
-    const hasLinks = linkRegex.test(content)
+    const linkMatches = [...content.matchAll(linkRegex)]
 
     return (
       <div className="space-y-6">
-        {/* Video Embed */}
-        {videoMatch && (
+        {videoMatches.length > 0 && (
           <div className="space-y-4">
-            {videoMatch.map((url, index) => {
-              const embedUrl = convertToEmbedUrl(url)
+            {videoMatches.map((match, index) => {
+              const fullUrl = match[0].startsWith("http") ? match[0] : `https://${match[0]}`
+              const embedUrl = convertToEmbedUrl(fullUrl)
               if (embedUrl) {
                 return (
-                  <div key={index} className="aspect-video rounded-lg overflow-hidden bg-muted">
+                  <div key={index} className="aspect-video rounded-lg overflow-hidden bg-muted border">
                     <iframe
                       src={embedUrl}
                       className="w-full h-full"
                       frameBorder="0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
+                      title={`Video ${index + 1}`}
                     />
                   </div>
                 )
@@ -629,8 +615,7 @@ Reserve alguns minutos para:
           </div>
         )}
 
-        {/* Text Content with Markdown support */}
-        <div className="prose prose-lg max-w-none">
+        <div className="prose prose-lg max-w-none prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-em:text-foreground prose-code:text-foreground prose-pre:bg-muted prose-pre:text-foreground prose-blockquote:text-muted-foreground prose-blockquote:border-l-primary">
           <div
             className="whitespace-pre-line"
             dangerouslySetInnerHTML={{
@@ -638,6 +623,25 @@ Reserve alguns minutos para:
             }}
           />
         </div>
+
+        {linkMatches.length > 0 && (
+          <div className="border-t pt-4">
+            <h4 className="text-sm font-medium text-muted-foreground mb-2">Links Relacionados:</h4>
+            <div className="space-y-1">
+              {linkMatches.map((match, index) => (
+                <a
+                  key={index}
+                  href={match[2]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline text-sm block"
+                >
+                  {match[1]}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Section Actions */}
         <div className="flex items-center justify-between pt-6 border-t">
@@ -695,7 +699,7 @@ Reserve alguns minutos para:
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <BookOpen className="w-16 h-16 text-muted-foreground mx-auto" />
-          <h3 className="text-lg font-semibold text-foreground">Módulo não encontrado</h3>
+          <h3 className="text-lg font-semibold text-foreground line-clamp-1">Módulo não encontrado</h3>
           <Link href="/modules">
             <Button>Voltar aos Módulos</Button>
           </Link>
